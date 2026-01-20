@@ -1,0 +1,45 @@
+# Configuration file for evaluating multiple datasets
+# Copy this file and modify paths according to your dataset locations
+
+# Sampler configuration (applies to all datasets)
+sampler:
+  N: 30                    # Number of reverse diffusion steps
+  corrector: ald           # Corrector type: ald, langevin, or none
+  corrector_steps: 1       # Number of corrector steps
+  snr: 0.5                 # SNR for Langevin dynamics
+  sampler_type: pc         # Sampler type: pc or ode
+  # t_eps: 0.03            # Minimum process time (optional)
+
+# List of datasets to evaluate
+datasets:
+  # VoiceBank-DEMAND dataset
+  - name: VoiceBank-DEMAND
+    clean_dir: /path/to/voicebank/test/clean
+    noisy_dir: /path/to/voicebank/test/noisy
+    enhanced_dir: ./enhanced_outputs/voicebank
+
+  # WSJ0-CHiME3 dataset
+  - name: WSJ0-CHiME3
+    clean_dir: /path/to/wsj0_chime3/test/clean
+    noisy_dir: /path/to/wsj0_chime3/test/noisy
+    enhanced_dir: ./enhanced_outputs/wsj0_chime3
+
+  # Custom dataset 1
+  - name: CustomDataset1
+    clean_dir: /path/to/custom1/clean
+    noisy_dir: /path/to/custom1/noisy
+    enhanced_dir: ./enhanced_outputs/custom1
+
+  # Custom dataset 2 (if test_dir is different from noisy_dir)
+  - name: CustomDataset2
+    test_dir: /path/to/custom2/test   # Use this if different from noisy_dir
+    clean_dir: /path/to/custom2/clean
+    noisy_dir: /path/to/custom2/noisy
+    enhanced_dir: ./enhanced_outputs/custom2
+
+# Notes:
+# - test_dir: Directory with audio files to enhance (defaults to noisy_dir if not specified)
+# - clean_dir: Directory with clean reference audio for metric computation
+# - noisy_dir: Directory with noisy audio for metric computation
+# - enhanced_dir: Output directory for enhanced audio and results
+# - All directories can be absolute or relative paths
