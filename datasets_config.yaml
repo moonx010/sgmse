@@ -1,0 +1,375 @@
+sampler:
+  N: 30
+  corrector: ald
+  corrector_steps: 1
+  snr: 0.5
+  sampler_type: pc
+
+datasets:
+  # ============================================
+  # 1. VoiceBank + DEMAND (Clean: in-domain, Noise: in-domain)
+  # ============================================
+
+  # TBUS (버스)
+  - name: vb_tbus_0dB
+    clean_dir: data/test_mixtures/vb_tbus/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_tbus/snr_0dB/noisy
+    enhanced_dir: results/vb_tbus_0dB
+
+  - name: vb_tbus_5dB
+    clean_dir: data/test_mixtures/vb_tbus/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_tbus/snr_5dB/noisy
+    enhanced_dir: results/vb_tbus_5dB
+
+  - name: vb_tbus_10dB
+    clean_dir: data/test_mixtures/vb_tbus/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_tbus/snr_10dB/noisy
+    enhanced_dir: results/vb_tbus_10dB
+
+  # TCAR (자동차)
+  - name: vb_tcar_0dB
+    clean_dir: data/test_mixtures/vb_tcar/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_tcar/snr_0dB/noisy
+    enhanced_dir: results/vb_tcar_0dB
+
+  - name: vb_tcar_5dB
+    clean_dir: data/test_mixtures/vb_tcar/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_tcar/snr_5dB/noisy
+    enhanced_dir: results/vb_tcar_5dB
+
+  - name: vb_tcar_10dB
+    clean_dir: data/test_mixtures/vb_tcar/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_tcar/snr_10dB/noisy
+    enhanced_dir: results/vb_tcar_10dB
+
+  # STRAFFIC (거리 교통)
+  - name: vb_straffic_0dB
+    clean_dir: data/test_mixtures/vb_straffic/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_straffic/snr_0dB/noisy
+    enhanced_dir: results/vb_straffic_0dB
+
+  - name: vb_straffic_5dB
+    clean_dir: data/test_mixtures/vb_straffic/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_straffic/snr_5dB/noisy
+    enhanced_dir: results/vb_straffic_5dB
+
+  - name: vb_straffic_10dB
+    clean_dir: data/test_mixtures/vb_straffic/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_straffic/snr_10dB/noisy
+    enhanced_dir: results/vb_straffic_10dB
+
+  # SPSQUARE (광장)
+  - name: vb_spsquare_0dB
+    clean_dir: data/test_mixtures/vb_spsquare/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_spsquare/snr_0dB/noisy
+    enhanced_dir: results/vb_spsquare_0dB
+
+  - name: vb_spsquare_5dB
+    clean_dir: data/test_mixtures/vb_spsquare/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_spsquare/snr_5dB/noisy
+    enhanced_dir: results/vb_spsquare_5dB
+
+  - name: vb_spsquare_10dB
+    clean_dir: data/test_mixtures/vb_spsquare/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_spsquare/snr_10dB/noisy
+    enhanced_dir: results/vb_spsquare_10dB
+
+  # NPARK (공원)
+  - name: vb_npark_0dB
+    clean_dir: data/test_mixtures/vb_npark/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_npark/snr_0dB/noisy
+    enhanced_dir: results/vb_npark_0dB
+
+  - name: vb_npark_5dB
+    clean_dir: data/test_mixtures/vb_npark/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_npark/snr_5dB/noisy
+    enhanced_dir: results/vb_npark_5dB
+
+  - name: vb_npark_10dB
+    clean_dir: data/test_mixtures/vb_npark/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_npark/snr_10dB/noisy
+    enhanced_dir: results/vb_npark_10dB
+
+  # NFIELD (들판)
+  - name: vb_nfield_0dB
+    clean_dir: data/test_mixtures/vb_nfield/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_nfield/snr_0dB/noisy
+    enhanced_dir: results/vb_nfield_0dB
+
+  - name: vb_nfield_5dB
+    clean_dir: data/test_mixtures/vb_nfield/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_nfield/snr_5dB/noisy
+    enhanced_dir: results/vb_nfield_5dB
+
+  - name: vb_nfield_10dB
+    clean_dir: data/test_mixtures/vb_nfield/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_nfield/snr_10dB/noisy
+    enhanced_dir: results/vb_nfield_10dB
+
+  # ============================================
+  # 2. VoiceBank + ESC-50 (Clean: in-domain, Noise: OOD)
+  # ============================================
+
+  # Animals
+  - name: vb_esc50_animals_0dB
+    clean_dir: data/test_mixtures/vb_esc50_animals/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_animals/snr_0dB/noisy
+    enhanced_dir: results/vb_esc50_animals_0dB
+
+  - name: vb_esc50_animals_5dB
+    clean_dir: data/test_mixtures/vb_esc50_animals/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_animals/snr_5dB/noisy
+    enhanced_dir: results/vb_esc50_animals_5dB
+
+  - name: vb_esc50_animals_10dB
+    clean_dir: data/test_mixtures/vb_esc50_animals/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_animals/snr_10dB/noisy
+    enhanced_dir: results/vb_esc50_animals_10dB
+
+  # Natural
+  - name: vb_esc50_natural_0dB
+    clean_dir: data/test_mixtures/vb_esc50_natural/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_natural/snr_0dB/noisy
+    enhanced_dir: results/vb_esc50_natural_0dB
+
+  - name: vb_esc50_natural_5dB
+    clean_dir: data/test_mixtures/vb_esc50_natural/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_natural/snr_5dB/noisy
+    enhanced_dir: results/vb_esc50_natural_5dB
+
+  - name: vb_esc50_natural_10dB
+    clean_dir: data/test_mixtures/vb_esc50_natural/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_natural/snr_10dB/noisy
+    enhanced_dir: results/vb_esc50_natural_10dB
+
+  # Human (non-speech)
+  - name: vb_esc50_human_0dB
+    clean_dir: data/test_mixtures/vb_esc50_human/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_human/snr_0dB/noisy
+    enhanced_dir: results/vb_esc50_human_0dB
+
+  - name: vb_esc50_human_5dB
+    clean_dir: data/test_mixtures/vb_esc50_human/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_human/snr_5dB/noisy
+    enhanced_dir: results/vb_esc50_human_5dB
+
+  - name: vb_esc50_human_10dB
+    clean_dir: data/test_mixtures/vb_esc50_human/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_human/snr_10dB/noisy
+    enhanced_dir: results/vb_esc50_human_10dB
+
+  # Domestic
+  - name: vb_esc50_domestic_0dB
+    clean_dir: data/test_mixtures/vb_esc50_domestic/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_domestic/snr_0dB/noisy
+    enhanced_dir: results/vb_esc50_domestic_0dB
+
+  - name: vb_esc50_domestic_5dB
+    clean_dir: data/test_mixtures/vb_esc50_domestic/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_domestic/snr_5dB/noisy
+    enhanced_dir: results/vb_esc50_domestic_5dB
+
+  - name: vb_esc50_domestic_10dB
+    clean_dir: data/test_mixtures/vb_esc50_domestic/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_domestic/snr_10dB/noisy
+    enhanced_dir: results/vb_esc50_domestic_10dB
+
+  # Urban
+  - name: vb_esc50_urban_0dB
+    clean_dir: data/test_mixtures/vb_esc50_urban/snr_0dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_urban/snr_0dB/noisy
+    enhanced_dir: results/vb_esc50_urban_0dB
+
+  - name: vb_esc50_urban_5dB
+    clean_dir: data/test_mixtures/vb_esc50_urban/snr_5dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_urban/snr_5dB/noisy
+    enhanced_dir: results/vb_esc50_urban_5dB
+
+  - name: vb_esc50_urban_10dB
+    clean_dir: data/test_mixtures/vb_esc50_urban/snr_10dB/clean
+    noisy_dir: data/test_mixtures/vb_esc50_urban/snr_10dB/noisy
+    enhanced_dir: results/vb_esc50_urban_10dB
+
+  # ============================================
+  # 3. LibriSpeech + DEMAND (Clean: OOD, Noise: in-domain)
+  # ============================================
+
+  # TBUS (버스)
+  - name: libri_tbus_0dB
+    clean_dir: data/test_mixtures/libri_tbus/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_tbus/snr_0dB/noisy
+    enhanced_dir: results/libri_tbus_0dB
+
+  - name: libri_tbus_5dB
+    clean_dir: data/test_mixtures/libri_tbus/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_tbus/snr_5dB/noisy
+    enhanced_dir: results/libri_tbus_5dB
+
+  - name: libri_tbus_10dB
+    clean_dir: data/test_mixtures/libri_tbus/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_tbus/snr_10dB/noisy
+    enhanced_dir: results/libri_tbus_10dB
+
+  # TCAR (자동차)
+  - name: libri_tcar_0dB
+    clean_dir: data/test_mixtures/libri_tcar/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_tcar/snr_0dB/noisy
+    enhanced_dir: results/libri_tcar_0dB
+
+  - name: libri_tcar_5dB
+    clean_dir: data/test_mixtures/libri_tcar/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_tcar/snr_5dB/noisy
+    enhanced_dir: results/libri_tcar_5dB
+
+  - name: libri_tcar_10dB
+    clean_dir: data/test_mixtures/libri_tcar/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_tcar/snr_10dB/noisy
+    enhanced_dir: results/libri_tcar_10dB
+
+  # STRAFFIC (거리 교통)
+  - name: libri_straffic_0dB
+    clean_dir: data/test_mixtures/libri_straffic/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_straffic/snr_0dB/noisy
+    enhanced_dir: results/libri_straffic_0dB
+
+  - name: libri_straffic_5dB
+    clean_dir: data/test_mixtures/libri_straffic/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_straffic/snr_5dB/noisy
+    enhanced_dir: results/libri_straffic_5dB
+
+  - name: libri_straffic_10dB
+    clean_dir: data/test_mixtures/libri_straffic/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_straffic/snr_10dB/noisy
+    enhanced_dir: results/libri_straffic_10dB
+
+  # SPSQUARE (광장)
+  - name: libri_spsquare_0dB
+    clean_dir: data/test_mixtures/libri_spsquare/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_spsquare/snr_0dB/noisy
+    enhanced_dir: results/libri_spsquare_0dB
+
+  - name: libri_spsquare_5dB
+    clean_dir: data/test_mixtures/libri_spsquare/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_spsquare/snr_5dB/noisy
+    enhanced_dir: results/libri_spsquare_5dB
+
+  - name: libri_spsquare_10dB
+    clean_dir: data/test_mixtures/libri_spsquare/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_spsquare/snr_10dB/noisy
+    enhanced_dir: results/libri_spsquare_10dB
+
+  # NPARK (공원)
+  - name: libri_npark_0dB
+    clean_dir: data/test_mixtures/libri_npark/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_npark/snr_0dB/noisy
+    enhanced_dir: results/libri_npark_0dB
+
+  - name: libri_npark_5dB
+    clean_dir: data/test_mixtures/libri_npark/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_npark/snr_5dB/noisy
+    enhanced_dir: results/libri_npark_5dB
+
+  - name: libri_npark_10dB
+    clean_dir: data/test_mixtures/libri_npark/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_npark/snr_10dB/noisy
+    enhanced_dir: results/libri_npark_10dB
+
+  # NFIELD (들판)
+  - name: libri_nfield_0dB
+    clean_dir: data/test_mixtures/libri_nfield/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_nfield/snr_0dB/noisy
+    enhanced_dir: results/libri_nfield_0dB
+
+  - name: libri_nfield_5dB
+    clean_dir: data/test_mixtures/libri_nfield/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_nfield/snr_5dB/noisy
+    enhanced_dir: results/libri_nfield_5dB
+
+  - name: libri_nfield_10dB
+    clean_dir: data/test_mixtures/libri_nfield/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_nfield/snr_10dB/noisy
+    enhanced_dir: results/libri_nfield_10dB
+
+  # ============================================
+  # 4. LibriSpeech + ESC-50 (Clean: OOD, Noise: OOD)
+  # ============================================
+
+  # Animals
+  - name: libri_esc50_animals_0dB
+    clean_dir: data/test_mixtures/libri_esc50_animals/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_animals/snr_0dB/noisy
+    enhanced_dir: results/libri_esc50_animals_0dB
+
+  - name: libri_esc50_animals_5dB
+    clean_dir: data/test_mixtures/libri_esc50_animals/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_animals/snr_5dB/noisy
+    enhanced_dir: results/libri_esc50_animals_5dB
+
+  - name: libri_esc50_animals_10dB
+    clean_dir: data/test_mixtures/libri_esc50_animals/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_animals/snr_10dB/noisy
+    enhanced_dir: results/libri_esc50_animals_10dB
+
+  # Natural
+  - name: libri_esc50_natural_0dB
+    clean_dir: data/test_mixtures/libri_esc50_natural/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_natural/snr_0dB/noisy
+    enhanced_dir: results/libri_esc50_natural_0dB
+
+  - name: libri_esc50_natural_5dB
+    clean_dir: data/test_mixtures/libri_esc50_natural/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_natural/snr_5dB/noisy
+    enhanced_dir: results/libri_esc50_natural_5dB
+
+  - name: libri_esc50_natural_10dB
+    clean_dir: data/test_mixtures/libri_esc50_natural/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_natural/snr_10dB/noisy
+    enhanced_dir: results/libri_esc50_natural_10dB
+
+  # Human (non-speech)
+  - name: libri_esc50_human_0dB
+    clean_dir: data/test_mixtures/libri_esc50_human/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_human/snr_0dB/noisy
+    enhanced_dir: results/libri_esc50_human_0dB
+
+  - name: libri_esc50_human_5dB
+    clean_dir: data/test_mixtures/libri_esc50_human/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_human/snr_5dB/noisy
+    enhanced_dir: results/libri_esc50_human_5dB
+
+  - name: libri_esc50_human_10dB
+    clean_dir: data/test_mixtures/libri_esc50_human/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_human/snr_10dB/noisy
+    enhanced_dir: results/libri_esc50_human_10dB
+
+  # Domestic
+  - name: libri_esc50_domestic_0dB
+    clean_dir: data/test_mixtures/libri_esc50_domestic/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_domestic/snr_0dB/noisy
+    enhanced_dir: results/libri_esc50_domestic_0dB
+
+  - name: libri_esc50_domestic_5dB
+    clean_dir: data/test_mixtures/libri_esc50_domestic/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_domestic/snr_5dB/noisy
+    enhanced_dir: results/libri_esc50_domestic_5dB
+
+  - name: libri_esc50_domestic_10dB
+    clean_dir: data/test_mixtures/libri_esc50_domestic/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_domestic/snr_10dB/noisy
+    enhanced_dir: results/libri_esc50_domestic_10dB
+
+  # Urban
+  - name: libri_esc50_urban_0dB
+    clean_dir: data/test_mixtures/libri_esc50_urban/snr_0dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_urban/snr_0dB/noisy
+    enhanced_dir: results/libri_esc50_urban_0dB
+
+  - name: libri_esc50_urban_5dB
+    clean_dir: data/test_mixtures/libri_esc50_urban/snr_5dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_urban/snr_5dB/noisy
+    enhanced_dir: results/libri_esc50_urban_5dB
+
+  - name: libri_esc50_urban_10dB
+    clean_dir: data/test_mixtures/libri_esc50_urban/snr_10dB/clean
+    noisy_dir: data/test_mixtures/libri_esc50_urban/snr_10dB/noisy
+    enhanced_dir: results/libri_esc50_urban_10dB
