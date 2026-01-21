@@ -1,4 +1,5 @@
-from os.path import join 
+import os
+from os.path import join
 from glob import glob
 from argparse import ArgumentParser
 from soundfile import read
@@ -27,11 +28,18 @@ if __name__ == '__main__':
     noisy_files += sorted(glob(join(args.noisy_dir, '**', '*.wav')))
     for noisy_file in tqdm(noisy_files):
         filename = noisy_file.replace(args.noisy_dir, "")[1:]
-        if 'dB' in filename:
+
+        # Try to find matching clean file
+        # First, try same filename (for create_test_mixtures.py output)
+        clean_filename = filename
+        clean_path = join(args.clean_dir, clean_filename)
+
+        # If not found, try original VoiceBank-DEMAND format (e.g., p232_001_-5dB.wav -> p232_001.wav)
+        if not os.path.exists(clean_path) and 'dB' in filename:
             clean_filename = filename.split("_")[0] + ".wav"
-        else:
-            clean_filename = filename
-        x, sr_x = read(join(args.clean_dir, clean_filename))
+            clean_path = join(args.clean_dir, clean_filename)
+
+        x, sr_x = read(clean_path)
         y, sr_y = read(join(args.noisy_dir, filename))
         x_hat, sr_x_hat = read(join(args.enhanced_dir, filename))
         assert sr_x == sr_y == sr_x_hat
