@@ -333,3 +333,8 @@ $RECYCLE.BIN/
 /lightning_logs
 /logs
 /jobs
+
+## Data files (datasets, test mixtures, results)
+/data/
+/results/
+/evaluation_results/
