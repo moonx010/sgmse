@@ -29,17 +29,18 @@ models:
       snr: 0.33  # Different snr for reverb model
 
 # ============================================
-# Test Dataset: Edinburgh Reverb
+# Test Dataset: VOiCES (real recorded reverb)
 # ============================================
 test_data:
-  edinburgh_reverb:
-    name: "Edinburgh Reverb"
-    clean_dir: "data/test_mixtures/edinburgh_reverb/clean"
-    noisy_dir: "data/test_mixtures/edinburgh_reverb/noisy"
+  voices_reverb:
+    name: "VOiCES Reverb"
+    description: "Real recorded reverberant speech (room1, close mic, no distractor)"
+    clean_dir: "data/test_mixtures/voices_reverb/clean"
+    noisy_dir: "data/test_mixtures/voices_reverb/noisy"
     # Results will be saved separately for each model
     enhanced_dirs:
-      vb_demand: "results/edinburgh_reverb/vb_demand"
-      wsj0_reverb: "results/edinburgh_reverb/wsj0_reverb"
+      vb_demand: "results/voices_reverb/vb_demand"
+      wsj0_reverb: "results/voices_reverb/wsj0_reverb"
 
 # ============================================
 # Checkpoint Download Commands

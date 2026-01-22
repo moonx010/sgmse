@@ -84,7 +84,7 @@ def main():
         models_to_run = [args.model]
 
     # Get test data info
-    test_data = config['test_data']['edinburgh_reverb']
+    test_data = config['test_data']['voices_reverb']
     clean_dir = test_data['clean_dir']
     noisy_dir = test_data['noisy_dir']
 
