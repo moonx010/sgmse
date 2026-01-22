@@ -1,0 +1,48 @@
+# Reverb Model Comparison Config
+# Compare VB-DEMAND (additive noise) vs WSJ0-REVERB (dereverberation) models
+# on the same reverb test data
+
+# ============================================
+# Model Checkpoints
+# ============================================
+models:
+  # Model A: Trained on additive noise (VoiceBank-DEMAND)
+  vb_demand:
+    name: "SGMSE+ (VB-DEMAND)"
+    checkpoint: "checkpoints/vb_demand.ckpt"
+    description: "Trained on additive noise"
+    sampler:
+      N: 30
+      corrector: ald
+      corrector_steps: 1
+      snr: 0.5
+
+  # Model B: Trained on reverberation (WSJ0-REVERB)
+  wsj0_reverb:
+    name: "SGMSE+ (WSJ0-REVERB)"
+    checkpoint: "checkpoints/wsj0_reverb.ckpt"
+    description: "Trained on reverberation"
+    sampler:
+      N: 50
+      corrector: ald
+      corrector_steps: 1
+      snr: 0.33  # Different snr for reverb model
+
+# ============================================
+# Test Dataset: Edinburgh Reverb
+# ============================================
+test_data:
+  edinburgh_reverb:
+    name: "Edinburgh Reverb"
+    clean_dir: "data/test_mixtures/edinburgh_reverb/clean"
+    noisy_dir: "data/test_mixtures/edinburgh_reverb/noisy"
+    # Results will be saved separately for each model
+    enhanced_dirs:
+      vb_demand: "results/edinburgh_reverb/vb_demand"
+      wsj0_reverb: "results/edinburgh_reverb/wsj0_reverb"
+
+# ============================================
+# Checkpoint Download Commands
+# ============================================
+# VB-DEMAND:    gdown 1_H3EXvhcYBhOZ9QNUcD5VZHc6ktrRbwQ
+# WSJ0-REVERB:  gdown 1eiOy0VjHh9V9ZUFTxu1Pq2w19izl9ejD

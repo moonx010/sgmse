@@ -31,6 +31,17 @@ def parse_dataset_name(name):
     """Parse dataset name into components."""
     # Format: {clean}_{noise}_{snr}dB
     # Examples: vb_tbus_0dB, libri_esc50_animals_5dB
+    # Special case: edinburgh_reverb (no SNR, convolutive noise)
+
+    # Handle reverb datasets (no SNR)
+    if 'reverb' in name.lower() and 'dB' not in name:
+        return {
+            'clean_source': 'Edinburgh',
+            'noise_source': 'Reverb',
+            'noise_type': name.replace('_', ' ').title(),
+            'snr': None,  # Reverb doesn't have SNR
+            'degradation_type': 'convolutive'
+        }
 
     parts = name.rsplit('_', 1)  # Split from right to get SNR
     snr = parts[-1].replace('dB', '')
@@ -60,7 +71,8 @@ def parse_dataset_name(name):
         'clean_source': clean_source,
         'noise_source': noise_source,
         'noise_type': noise_type,
-        'snr': int(snr)
+        'snr': int(snr),
+        'degradation_type': 'additive'
     }
 
 
@@ -71,6 +83,7 @@ def prepare_data(df):
     df['Noise Source'] = parsed.apply(lambda x: x['noise_source'])
     df['Noise Type'] = parsed.apply(lambda x: x['noise_type'])
     df['SNR (dB)'] = parsed.apply(lambda x: x['snr'])
+    df['Degradation Type'] = parsed.apply(lambda x: x.get('degradation_type', 'additive'))
     return df
 
 

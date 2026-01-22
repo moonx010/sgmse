@@ -373,3 +373,15 @@ datasets:
     clean_dir: data/test_mixtures/libri_esc50_urban/snr_10dB/clean
     noisy_dir: data/test_mixtures/libri_esc50_urban/snr_10dB/noisy
     enhanced_dir: results/libri_esc50_urban_10dB
+
+  # ============================================
+  # 5. Reverberation (Edinburgh Reverb Dataset)
+  # ============================================
+  # Noise type: convolutive (reverberation), not additive
+  # This tests how models trained on additive noise handle reverb
+
+  - name: edinburgh_reverb
+    clean_dir: data/test_mixtures/edinburgh_reverb/clean
+    noisy_dir: data/test_mixtures/edinburgh_reverb/noisy
+    enhanced_dir: results/edinburgh_reverb
+    noise_type: reverb  # Mark as reverb for analysis
