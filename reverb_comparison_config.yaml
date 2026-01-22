@@ -9,7 +9,7 @@ models:
   # Model A: Trained on additive noise (VoiceBank-DEMAND)
   vb_demand:
     name: "SGMSE+ (VB-DEMAND)"
-    checkpoint: "checkpoints/vb_demand.ckpt"
+    checkpoint: "checkpoints/sgmse_vb-dmd.ckpt"
     description: "Trained on additive noise"
     sampler:
       N: 30
