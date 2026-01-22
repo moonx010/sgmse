@@ -3,7 +3,7 @@
 Visualize reverb comparison results.
 
 Compare VB-DEMAND (additive noise) vs WSJ0-REVERB (dereverberation) models
-on Edinburgh Reverb test data.
+on VOiCES Reverb test data.
 
 Usage:
     python visualize_reverb_comparison.py \
@@ -73,7 +73,7 @@ def plot_comparison_bars(df_vb, df_reverb, output_dir):
         bars[winner_idx].set_edgecolor('green')
         bars[winner_idx].set_linewidth(3)
 
-    plt.suptitle('Edinburgh Reverb: Model Comparison', fontsize=14, fontweight='bold')
+    plt.suptitle('VOiCES Reverb: Model Comparison', fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'model_comparison_bars.png'), dpi=150, bbox_inches='tight')
     plt.savefig(os.path.join(output_dir, 'model_comparison_bars.pdf'), bbox_inches='tight')
@@ -103,7 +103,7 @@ def plot_distribution(df_vb, df_reverb, output_dir):
         ax.set_title(f'{name} Distribution')
         ax.grid(True, alpha=0.3, axis='y')
 
-    plt.suptitle('Edinburgh Reverb: Score Distribution', fontsize=14, fontweight='bold')
+    plt.suptitle('VOiCES Reverb: Score Distribution', fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'model_comparison_boxplot.png'), dpi=150, bbox_inches='tight')
     plt.savefig(os.path.join(output_dir, 'model_comparison_boxplot.pdf'), bbox_inches='tight')
@@ -145,7 +145,7 @@ def plot_scatter(df_vb, df_reverb, output_dir):
                transform=ax.transAxes, fontsize=9, verticalalignment='top',
                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
 
-    plt.suptitle('Edinburgh Reverb: File-by-File Comparison', fontsize=14, fontweight='bold')
+    plt.suptitle('VOiCES Reverb: File-by-File Comparison', fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'model_comparison_scatter.png'), dpi=150, bbox_inches='tight')
     plt.savefig(os.path.join(output_dir, 'model_comparison_scatter.pdf'), bbox_inches='tight')
@@ -161,7 +161,7 @@ def print_summary(df_vb, df_reverb):
     print("\n" + "="*70)
     print("REVERB COMPARISON SUMMARY")
     print("="*70)
-    print(f"\nDataset: Edinburgh Reverb ({len(df_vb)} files)")
+    print(f"\nDataset: VOiCES Reverb ({len(df_vb)} files)")
     print("\n" + "-"*70)
     print(f"{'Metric':<12} {'VB-DEMAND':<20} {'WSJ0-REVERB':<20} {'Winner':<10}")
     print("-"*70)
@@ -188,10 +188,10 @@ def print_summary(df_vb, df_reverb):
 def main():
     parser = argparse.ArgumentParser(description="Visualize reverb comparison results")
     parser.add_argument("--vb_demand_results", type=str,
-                       default="results/edinburgh_reverb/vb_demand/_results.csv",
+                       default="results/voices_reverb/vb_demand/_results.csv",
                        help="Path to VB-DEMAND results CSV")
     parser.add_argument("--wsj0_reverb_results", type=str,
-                       default="results/edinburgh_reverb/wsj0_reverb/_results.csv",
+                       default="results/voices_reverb/wsj0_reverb/_results.csv",
                        help="Path to WSJ0-REVERB results CSV")
     parser.add_argument("--output_dir", type=str, default="plots/reverb_comparison",
                        help="Output directory for plots")
