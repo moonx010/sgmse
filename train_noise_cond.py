@@ -81,6 +81,8 @@ if __name__ == '__main__':
                                 help="Accumulate gradients.")
     trainer_parser.add_argument("--max_epochs", type=int, default=-1,
                                 help="Number of epochs to train.")
+    trainer_parser.add_argument("--max_steps", type=int, default=-1,
+                                help="Number of steps to train. -1 for unlimited.")
 
     NoiseCondScoreModel.add_argparse_args(
         parser.add_argument_group("NoiseCondScoreModel",
