@@ -104,20 +104,37 @@ def create_summary_table(df, output_dir):
     print(table2.to_string())
     table2.to_csv(os.path.join(output_dir, 'table_snr.csv'))
 
-    # Table 3: Mean metrics by Noise Type
-    table3 = df.groupby(['Noise Source', 'Noise Type']).agg({
-        'PESQ_mean': 'mean',
-        'ESTOI_mean': 'mean',
-        'SI-SDR_mean': 'mean'
-    }).round(3)
+    # Table 3: DEMAND noise types
+    df_demand = df[df['Noise Source'] == 'DEMAND']
+    if len(df_demand) > 0:
+        table3_demand = df_demand.groupby('Noise Type').agg({
+            'PESQ_mean': 'mean',
+            'ESTOI_mean': 'mean',
+            'SI-SDR_mean': 'mean'
+        }).round(3).sort_values('PESQ_mean', ascending=False)
 
-    print("\n" + "="*80)
-    print("TABLE 3: Mean Metrics by Noise Type")
-    print("="*80)
-    print(table3.to_string())
-    table3.to_csv(os.path.join(output_dir, 'table_noise_type.csv'))
+        print("\n" + "="*80)
+        print("TABLE 3a: DEMAND Noise Types (in-domain)")
+        print("="*80)
+        print(table3_demand.to_string())
+        table3_demand.to_csv(os.path.join(output_dir, 'table_demand_noise_types.csv'))
 
-    # Table 4: Full results table
+    # Table 4: ESC-50 noise categories
+    df_esc = df[df['Noise Source'] == 'ESC-50']
+    if len(df_esc) > 0:
+        table3_esc = df_esc.groupby('Noise Type').agg({
+            'PESQ_mean': 'mean',
+            'ESTOI_mean': 'mean',
+            'SI-SDR_mean': 'mean'
+        }).round(3).sort_values('PESQ_mean', ascending=False)
+
+        print("\n" + "="*80)
+        print("TABLE 3b: ESC-50 Noise Categories (OOD)")
+        print("="*80)
+        print(table3_esc.to_string())
+        table3_esc.to_csv(os.path.join(output_dir, 'table_esc50_noise_types.csv'))
+
+    # Table 5: Full results table
     full_table = df[['Dataset', 'Clean Source', 'Noise Source', 'Noise Type',
                      'SNR (dB)', 'PESQ_mean', 'ESTOI_mean', 'SI-SDR_mean']].copy()
     full_table = full_table.sort_values(['Clean Source', 'Noise Source', 'Noise Type', 'SNR (dB)'])
@@ -127,7 +144,7 @@ def create_summary_table(df, output_dir):
     print(f"Tables saved to {output_dir}/")
     print("="*80)
 
-    return table1, table2, table3
+    return table1, table2
 
 
 def plot_metrics_by_snr(df, output_dir):
@@ -158,46 +175,159 @@ def plot_metrics_by_snr(df, output_dir):
     plt.close()
 
 
-def plot_metrics_by_noise_type(df, output_dir):
-    """Plot metrics by noise type."""
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+def plot_demand_noise_types(df, output_dir):
+    """Plot metrics by DEMAND noise types."""
+    df_demand = df[df['Noise Source'] == 'DEMAND']
+    if len(df_demand) == 0:
+        print("No DEMAND data found, skipping DEMAND plots")
+        return
 
     metrics = ['PESQ_mean', 'ESTOI_mean', 'SI-SDR_mean']
     metric_names = ['PESQ', 'ESTOI', 'SI-SDR (dB)']
 
-    # Average over SNR
-    df_avg = df.groupby(['Noise Source', 'Noise Type']).agg({
+    # 1. Bar chart averaged over SNR
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+    df_avg = df_demand.groupby('Noise Type').agg({
         'PESQ_mean': 'mean',
         'ESTOI_mean': 'mean',
         'SI-SDR_mean': 'mean'
     }).reset_index()
 
     for ax, metric, name in zip(axes, metrics, metric_names):
-        # DEMAND
-        demand_data = df_avg[df_avg['Noise Source'] == 'DEMAND'].sort_values(metric, ascending=False)
-        # ESC-50
-        esc_data = df_avg[df_avg['Noise Source'] == 'ESC-50'].sort_values(metric, ascending=False)
+        data = df_avg.sort_values(metric, ascending=True)
+        colors = plt.cm.Blues(np.linspace(0.4, 0.9, len(data)))
+        ax.barh(data['Noise Type'], data[metric], color=colors)
+        ax.set_xlabel(name)
+        ax.set_title(f'{name} by DEMAND Noise Type')
+        ax.grid(True, alpha=0.3, axis='x')
 
-        x = np.arange(max(len(demand_data), len(esc_data)))
-        width = 0.35
-
-        if len(demand_data) > 0:
-            ax.bar(x[:len(demand_data)] - width/2, demand_data[metric], width, label='DEMAND', color='steelblue')
-            ax.set_xticks(x[:len(demand_data)])
-            ax.set_xticklabels(demand_data['Noise Type'], rotation=45, ha='right')
-
-        if len(esc_data) > 0:
-            ax.bar(x[:len(esc_data)] + width/2, esc_data[metric], width, label='ESC-50', color='coral')
-
-        ax.set_ylabel(name)
-        ax.set_title(f'{name} by Noise Type')
-        ax.legend()
-        ax.grid(True, alpha=0.3, axis='y')
-
+    plt.suptitle('DEMAND Noise Types (in-domain)', fontsize=12, fontweight='bold')
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'metrics_by_noise_type.png'), dpi=150, bbox_inches='tight')
-    plt.savefig(os.path.join(output_dir, 'metrics_by_noise_type.pdf'), bbox_inches='tight')
-    print(f"Saved: {output_dir}/metrics_by_noise_type.png")
+    plt.savefig(os.path.join(output_dir, 'demand_noise_types.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'demand_noise_types.pdf'), bbox_inches='tight')
+    print(f"Saved: {output_dir}/demand_noise_types.png")
+    plt.close()
+
+    # 2. Line plot: SNR vs metrics for each noise type
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    noise_types = df_demand['Noise Type'].unique()
+    colors = plt.cm.tab10(np.linspace(0, 1, len(noise_types)))
+
+    for ax, metric, name in zip(axes, metrics, metric_names):
+        for noise_type, color in zip(noise_types, colors):
+            data = df_demand[df_demand['Noise Type'] == noise_type].sort_values('SNR (dB)')
+            ax.plot(data['SNR (dB)'], data[metric], marker='o', label=noise_type, color=color)
+
+        ax.set_xlabel('SNR (dB)')
+        ax.set_ylabel(name)
+        ax.set_title(f'{name} vs SNR (DEMAND)')
+        ax.legend(loc='best', fontsize=8)
+        ax.grid(True, alpha=0.3)
+
+    plt.suptitle('DEMAND: Performance by SNR and Noise Type', fontsize=12, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'demand_snr_by_noise.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'demand_snr_by_noise.pdf'), bbox_inches='tight')
+    print(f"Saved: {output_dir}/demand_snr_by_noise.png")
+    plt.close()
+
+
+def plot_esc50_noise_types(df, output_dir):
+    """Plot metrics by ESC-50 noise categories."""
+    df_esc = df[df['Noise Source'] == 'ESC-50']
+    if len(df_esc) == 0:
+        print("No ESC-50 data found, skipping ESC-50 plots")
+        return
+
+    metrics = ['PESQ_mean', 'ESTOI_mean', 'SI-SDR_mean']
+    metric_names = ['PESQ', 'ESTOI', 'SI-SDR (dB)']
+
+    # 1. Bar chart averaged over SNR
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+    df_avg = df_esc.groupby('Noise Type').agg({
+        'PESQ_mean': 'mean',
+        'ESTOI_mean': 'mean',
+        'SI-SDR_mean': 'mean'
+    }).reset_index()
+
+    for ax, metric, name in zip(axes, metrics, metric_names):
+        data = df_avg.sort_values(metric, ascending=True)
+        colors = plt.cm.Oranges(np.linspace(0.4, 0.9, len(data)))
+        ax.barh(data['Noise Type'], data[metric], color=colors)
+        ax.set_xlabel(name)
+        ax.set_title(f'{name} by ESC-50 Category')
+        ax.grid(True, alpha=0.3, axis='x')
+
+    plt.suptitle('ESC-50 Noise Categories (OOD)', fontsize=12, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'esc50_noise_types.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'esc50_noise_types.pdf'), bbox_inches='tight')
+    print(f"Saved: {output_dir}/esc50_noise_types.png")
+    plt.close()
+
+    # 2. Line plot: SNR vs metrics for each category
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    categories = df_esc['Noise Type'].unique()
+    colors = plt.cm.Set2(np.linspace(0, 1, len(categories)))
+
+    for ax, metric, name in zip(axes, metrics, metric_names):
+        for category, color in zip(categories, colors):
+            data = df_esc[df_esc['Noise Type'] == category].sort_values('SNR (dB)')
+            ax.plot(data['SNR (dB)'], data[metric], marker='s', label=category, color=color)
+
+        ax.set_xlabel('SNR (dB)')
+        ax.set_ylabel(name)
+        ax.set_title(f'{name} vs SNR (ESC-50)')
+        ax.legend(loc='best', fontsize=8)
+        ax.grid(True, alpha=0.3)
+
+    plt.suptitle('ESC-50: Performance by SNR and Noise Category', fontsize=12, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'esc50_snr_by_category.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'esc50_snr_by_category.pdf'), bbox_inches='tight')
+    print(f"Saved: {output_dir}/esc50_snr_by_category.png")
+    plt.close()
+
+
+def plot_noise_source_comparison(df, output_dir):
+    """Compare overall performance between DEMAND and ESC-50."""
+    metrics = ['PESQ_mean', 'ESTOI_mean', 'SI-SDR_mean']
+    metric_names = ['PESQ', 'ESTOI', 'SI-SDR (dB)']
+
+    # Average by Noise Source and SNR
+    df_avg = df.groupby(['Noise Source', 'SNR (dB)']).agg({
+        'PESQ_mean': ['mean', 'std'],
+        'ESTOI_mean': ['mean', 'std'],
+        'SI-SDR_mean': ['mean', 'std']
+    }).reset_index()
+    df_avg.columns = ['Noise Source', 'SNR (dB)',
+                      'PESQ_mean', 'PESQ_std',
+                      'ESTOI_mean', 'ESTOI_std',
+                      'SI-SDR_mean', 'SI-SDR_std']
+
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+    colors = {'DEMAND': 'steelblue', 'ESC-50': 'coral'}
+
+    for ax, metric, name in zip(axes, metrics, metric_names):
+        std_col = metric.replace('_mean', '_std')
+        for source in ['DEMAND', 'ESC-50']:
+            data = df_avg[df_avg['Noise Source'] == source].sort_values('SNR (dB)')
+            if len(data) > 0:
+                ax.errorbar(data['SNR (dB)'], data[metric],
+                           yerr=data[std_col], marker='o', label=f'{source} (avg)',
+                           color=colors[source], capsize=3, linewidth=2)
+
+        ax.set_xlabel('SNR (dB)')
+        ax.set_ylabel(name)
+        ax.set_title(f'{name}: DEMAND vs ESC-50')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+    plt.suptitle('In-domain (DEMAND) vs OOD (ESC-50) Noise Comparison', fontsize=12, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'noise_source_comparison.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'noise_source_comparison.pdf'), bbox_inches='tight')
+    print(f"Saved: {output_dir}/noise_source_comparison.png")
     plt.close()
 
 
@@ -287,7 +417,12 @@ def main():
     # Generate plots
     print("\nGenerating plots...")
     plot_metrics_by_snr(df, args.output_dir)
-    plot_metrics_by_noise_type(df, args.output_dir)
+
+    # Noise type analysis (separated by source)
+    plot_demand_noise_types(df, args.output_dir)
+    plot_esc50_noise_types(df, args.output_dir)
+    plot_noise_source_comparison(df, args.output_dir)
+
     plot_heatmap(df, args.output_dir)
     plot_domain_comparison(df, args.output_dir)
 
