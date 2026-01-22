@@ -208,23 +208,34 @@ def plot_demand_noise_types(df, output_dir):
     print(f"Saved: {output_dir}/demand_noise_types.png")
     plt.close()
 
-    # 2. Line plot: SNR vs metrics for each noise type
+    # 2. Line plot: SNR vs metrics for each noise type (separate lines for Clean Source)
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     noise_types = df_demand['Noise Type'].unique()
+    clean_sources = df_demand['Clean Source'].unique()
     colors = plt.cm.tab10(np.linspace(0, 1, len(noise_types)))
+    linestyles = {'VoiceBank': '-', 'LibriSpeech': '--'}
+    markers = {'VoiceBank': 'o', 'LibriSpeech': 's'}
 
     for ax, metric, name in zip(axes, metrics, metric_names):
         for noise_type, color in zip(noise_types, colors):
-            data = df_demand[df_demand['Noise Type'] == noise_type].sort_values('SNR (dB)')
-            ax.plot(data['SNR (dB)'], data[metric], marker='o', label=noise_type, color=color)
+            for clean_src in clean_sources:
+                data = df_demand[(df_demand['Noise Type'] == noise_type) &
+                                (df_demand['Clean Source'] == clean_src)].sort_values('SNR (dB)')
+                if len(data) > 0:
+                    label = f"{noise_type} ({clean_src[:2]})"  # VB or Li
+                    ax.plot(data['SNR (dB)'], data[metric],
+                           marker=markers.get(clean_src, 'o'),
+                           linestyle=linestyles.get(clean_src, '-'),
+                           label=label, color=color, linewidth=1.5)
 
         ax.set_xlabel('SNR (dB)')
         ax.set_ylabel(name)
         ax.set_title(f'{name} vs SNR (DEMAND)')
-        ax.legend(loc='best', fontsize=8)
+        ax.legend(loc='best', fontsize=7, ncol=2)
         ax.grid(True, alpha=0.3)
 
-    plt.suptitle('DEMAND: Performance by SNR and Noise Type', fontsize=12, fontweight='bold')
+    plt.suptitle('DEMAND: Performance by SNR and Noise Type (solid: VoiceBank, dashed: LibriSpeech)',
+                 fontsize=11, fontweight='bold')
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'demand_snr_by_noise.png'), dpi=150, bbox_inches='tight')
     plt.savefig(os.path.join(output_dir, 'demand_snr_by_noise.pdf'), bbox_inches='tight')
@@ -265,23 +276,34 @@ def plot_esc50_noise_types(df, output_dir):
     print(f"Saved: {output_dir}/esc50_noise_types.png")
     plt.close()
 
-    # 2. Line plot: SNR vs metrics for each category
+    # 2. Line plot: SNR vs metrics for each category (separate lines for Clean Source)
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     categories = df_esc['Noise Type'].unique()
+    clean_sources = df_esc['Clean Source'].unique()
     colors = plt.cm.Set2(np.linspace(0, 1, len(categories)))
+    linestyles = {'VoiceBank': '-', 'LibriSpeech': '--'}
+    markers = {'VoiceBank': 'o', 'LibriSpeech': 's'}
 
     for ax, metric, name in zip(axes, metrics, metric_names):
         for category, color in zip(categories, colors):
-            data = df_esc[df_esc['Noise Type'] == category].sort_values('SNR (dB)')
-            ax.plot(data['SNR (dB)'], data[metric], marker='s', label=category, color=color)
+            for clean_src in clean_sources:
+                data = df_esc[(df_esc['Noise Type'] == category) &
+                             (df_esc['Clean Source'] == clean_src)].sort_values('SNR (dB)')
+                if len(data) > 0:
+                    label = f"{category} ({clean_src[:2]})"  # VB or Li
+                    ax.plot(data['SNR (dB)'], data[metric],
+                           marker=markers.get(clean_src, 'o'),
+                           linestyle=linestyles.get(clean_src, '-'),
+                           label=label, color=color, linewidth=1.5)
 
         ax.set_xlabel('SNR (dB)')
         ax.set_ylabel(name)
         ax.set_title(f'{name} vs SNR (ESC-50)')
-        ax.legend(loc='best', fontsize=8)
+        ax.legend(loc='best', fontsize=7, ncol=2)
         ax.grid(True, alpha=0.3)
 
-    plt.suptitle('ESC-50: Performance by SNR and Noise Category', fontsize=12, fontweight='bold')
+    plt.suptitle('ESC-50: Performance by SNR and Noise Category (solid: VoiceBank, dashed: LibriSpeech)',
+                 fontsize=11, fontweight='bold')
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'esc50_snr_by_category.png'), dpi=150, bbox_inches='tight')
     plt.savefig(os.path.join(output_dir, 'esc50_snr_by_category.pdf'), bbox_inches='tight')
