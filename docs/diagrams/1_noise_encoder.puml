@@ -1,49 +1,76 @@
 @startuml
-title Noise Encoder Architecture
+title Noise Encoder - Step by Step
 
-skinparam rectangle {
-    BackgroundColor LightBlue
-    BorderColor DarkBlue
+skinparam card {
+    BackgroundColor<<input>> LightGray
+    BackgroundColor<<conv>> LightBlue
+    BackgroundColor<<pool>> LightGreen
+    BackgroundColor<<fc>> LightYellow
+    BackgroundColor<<output>> Pink
 }
 
-rectangle "Input" as input {
-    card "r (noise ref)\n[B, 1, F, T_ref]" as r
-}
+' Input
+card "**Input**\nr (noise reference)\n[B, 1, 256, 32]\ncomplex spectrogram" <<input>> as input
 
-rectangle "Preprocessing" as preprocess {
-    card "Split Real/Imag\n[B, 2, F, T_ref]" as split
-}
+' Preprocessing
+card "**Split Real/Imag**\n[B, 2, 256, 32]\n\nComplex → 2 channels\n(real, imaginary)" <<input>> as split
 
-rectangle "Conv Layers" as convs {
-    card "Conv2d(2→64)\nGroupNorm + SiLU" as conv1
-    card "Conv2d(64→128)\nGroupNorm + SiLU" as conv2
-    card "Conv2d(128→256)\nGroupNorm + SiLU" as conv3
-    card "Conv2d(256→512)\nGroupNorm + SiLU" as conv4
-}
+' Conv layers with shapes
+card "**Conv1** (stride=2)\n[B, 2, 256, 32] → [B, 64, 128, 16]\n\n저수준 spectral features\n(edges, basic patterns)" <<conv>> as conv1
 
-rectangle "Pooling" as pool {
-    card "AdaptiveAvgPool2d\n[B, 512, 4, 1]" as avgpool
-    card "Flatten\n[B, 2048]" as flatten
-}
+card "**Conv2** (stride=2)\n[B, 64, 128, 16] → [B, 128, 64, 8]\n\n중간 수준 features\n(harmonic structure)" <<conv>> as conv2
 
-rectangle "FC Layers" as fc {
-    card "Linear(2048→512)\nSiLU" as fc1
-    card "Linear(512→512)" as fc2
-}
+card "**Conv3** (stride=2)\n[B, 128, 64, 8] → [B, 256, 32, 4]\n\n고수준 features\n(noise texture)" <<conv>> as conv3
 
-rectangle "Output" as output {
-    card "z_r\n[B, 512]" as zr
-}
+card "**Conv4** (stride=2)\n[B, 256, 32, 4] → [B, 512, 16, 2]\n\n추상적 noise 특성\n(noise type signature)" <<conv>> as conv4
 
-r --> split
+' Pooling
+card "**AdaptiveAvgPool2d**\n[B, 512, 16, 2] → [B, 512, 4, 1]\n\n시간 축: 평균 (stationary 가정)\n주파수 축: 4 bands로 요약" <<pool>> as pool
+
+card "**Flatten**\n[B, 512, 4, 1] → [B, 2048]\n\n512 ch × 4 bands = 2048" <<pool>> as flatten
+
+' FC layers
+card "**FC1 + SiLU**\n[B, 2048] → [B, 512]\n\nDimensionality reduction\n+ non-linear transform" <<fc>> as fc1
+
+card "**FC2**\n[B, 512] → [B, 512]\n\nFinal projection to\nembedding space" <<fc>> as fc2
+
+' Output
+card "**Output**\nz_r [B, 512]\n\nNoise의 \"지문\"\n(fixed-size representation)" <<output>> as output
+
+' Connections
+input --> split
 split --> conv1
 conv1 --> conv2
 conv2 --> conv3
 conv3 --> conv4
-conv4 --> avgpool
-avgpool --> flatten
+conv4 --> pool
+pool --> flatten
 flatten --> fc1
 fc1 --> fc2
-fc2 --> zr
+fc2 --> output
+
+' Notes
+note right of conv1
+  각 Conv layer:
+  - 3×3 kernel
+  - stride=2 (downsampling)
+  - GroupNorm + SiLU
+end note
+
+note right of pool
+  왜 시간을 압축?
+  → Noise는 보통 시간에 따라
+    특성이 일정함 (stationary)
+
+  왜 주파수는 보존?
+  → 주파수별 에너지 분포가
+    noise type을 결정
+end note
+
+note right of output
+  이 512-dim vector가
+  score network의 모든
+  ResBlock에 전달됨
+end note
 
 @enduml
