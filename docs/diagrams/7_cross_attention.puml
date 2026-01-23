@@ -1,0 +1,61 @@
+@startuml
+title Cross-Attention Conditioning Architecture
+
+skinparam rectangle {
+    BackgroundColor<<encoder>> LightBlue
+    BackgroundColor<<attention>> LightPink
+    BackgroundColor<<resblock>> LightYellow
+}
+
+rectangle "Noise Encoder (Modified)" <<encoder>> {
+    card "r [B, 1, F, T]" as r
+    card "Conv Layers\n[B, C, F', T']" as conv
+    card "Flatten + Permute\n[B, L, C]" as flatten
+    card "Projection\n[B, L, D]" as proj
+    card "Z_r (context)" as Zr
+}
+
+rectangle "ResBlock with Cross-Attention" <<resblock>> {
+    card "h [B, C, H, W]\n(features)" as h_in
+    card "Conv + Norm\n+ temb" as conv_block
+    card "h_flat [B, N, C]\nN = H×W" as h_flat
+
+    rectangle "Cross-Attention" <<attention>> {
+        card "Q = Linear(h_flat)" as Q
+        card "K = Linear(Z_r)" as K
+        card "V = Linear(Z_r)" as V
+        card "Attention\nsoftmax(QK^T/√d)V" as attn
+    }
+
+    card "Reshape\n[B, C, H, W]" as reshape
+    card "Conv + Residual" as conv_out
+    card "h_out" as h_out
+}
+
+r --> conv
+conv --> flatten
+flatten --> proj
+proj --> Zr
+
+h_in --> conv_block
+conv_block --> h_flat
+h_flat --> Q
+
+Zr --> K
+Zr --> V
+
+Q --> attn
+K --> attn
+V --> attn
+
+attn --> reshape
+reshape --> conv_out
+conv_out --> h_out
+
+note right of attn
+  각 feature position이
+  noise context에서
+  필요한 정보를 선택적으로 query
+end note
+
+@enduml
