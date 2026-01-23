@@ -56,8 +56,6 @@ class NCSNpp_v2_NoiseCond(nn.Module):
         parser.add_argument("--ch_mult", type=int, nargs='+', default=[1, 1, 2, 2, 2, 2, 2])
         parser.add_argument("--num_res_blocks", type=int, default=2)
         parser.add_argument("--attn_resolutions", type=int, nargs='+', default=[16])
-        parser.add_argument("--noise_embed_dim", type=int, default=512,
-                            help="Dimension of noise reference embedding")
         parser.add_argument("--noise_cond_type", type=str, default="add",
                             choices=["add", "film"],
                             help="Type of noise conditioning: 'add' or 'film'")
