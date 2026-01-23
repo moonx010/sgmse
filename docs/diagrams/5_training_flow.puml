@@ -1,0 +1,31 @@
+@startuml
+title Training Data Flow
+
+skinparam sequence {
+    ArrowColor DarkBlue
+    LifeLineBorderColor DarkBlue
+}
+
+participant "DataLoader" as data
+participant "NoiseEncoder" as enc
+participant "SDE" as sde
+participant "ScoreNetwork" as net
+participant "Loss" as loss
+
+data -> data: Load (x, y) pair
+data -> data: n = y - x (oracle noise)
+data -> data: r = random_crop(n)
+data -> enc: r (noise reference)
+enc -> enc: z_r = encode(r)
+
+data -> sde: x, y, t~U(0,1)
+sde -> sde: mean, std = marginal_prob(x, y, t)
+sde -> sde: x_t = mean + std * z
+
+sde -> net: x_t, y, t, z_r
+net -> net: score = forward(x_t, y, t, z_r)
+
+net -> loss: score, z, std
+loss -> loss: L = ||score * σ + z||²
+
+@enduml

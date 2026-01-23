@@ -1,0 +1,29 @@
+@startuml
+title Inference (Zero-shot Enhancement)
+
+skinparam sequence {
+    ArrowColor DarkGreen
+    LifeLineBorderColor DarkGreen
+}
+
+participant "User" as user
+participant "NoiseEncoder" as enc
+participant "Sampler" as sampler
+participant "ScoreNetwork" as net
+
+user -> user: Record noise reference r\n(0.5~2 sec from environment)
+user -> enc: r
+enc -> user: z_r (noise embedding)
+
+user -> sampler: y (noisy speech), z_r
+sampler -> sampler: x_T ~ N(y, σ_T²)
+
+loop t = T to 0
+    sampler -> net: x_t, y, t, z_r
+    net -> sampler: score
+    sampler -> sampler: x_{t-1} = reverse_step(x_t, score)
+end
+
+sampler -> user: x_0 (enhanced speech)
+
+@enduml

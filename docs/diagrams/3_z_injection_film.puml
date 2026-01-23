@@ -1,0 +1,36 @@
+@startuml
+title Noise Embedding Injection (FiLM Mode)
+
+skinparam rectangle {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+}
+
+rectangle "Time Embedding" as time_emb {
+    card "t → Fourier → MLP" as t_process
+    card "temb [B, 512]" as temb
+}
+
+rectangle "Noise Embedding" as noise_emb {
+    card "z_r [B, 512]" as zr
+    card "gamma = Linear(z_r)" as gamma_proj
+    card "beta = Linear(z_r)" as beta_proj
+}
+
+rectangle "FiLM Modulation" as film {
+    card "temb_new = gamma * temb + beta" as film_op
+}
+
+rectangle "To ResBlocks" as output {
+    card "modulated_emb" as out
+}
+
+t_process --> temb
+zr --> gamma_proj
+zr --> beta_proj
+temb --> film_op
+gamma_proj --> film_op
+beta_proj --> film_op
+film_op --> out
+
+@enduml

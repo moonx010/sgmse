@@ -1,0 +1,49 @@
+@startuml
+title Noise Encoder Architecture
+
+skinparam rectangle {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+}
+
+rectangle "Input" as input {
+    card "r (noise ref)\n[B, 1, F, T_ref]" as r
+}
+
+rectangle "Preprocessing" as preprocess {
+    card "Split Real/Imag\n[B, 2, F, T_ref]" as split
+}
+
+rectangle "Conv Layers" as convs {
+    card "Conv2d(2→64)\nGroupNorm + SiLU" as conv1
+    card "Conv2d(64→128)\nGroupNorm + SiLU" as conv2
+    card "Conv2d(128→256)\nGroupNorm + SiLU" as conv3
+    card "Conv2d(256→512)\nGroupNorm + SiLU" as conv4
+}
+
+rectangle "Pooling" as pool {
+    card "AdaptiveAvgPool2d\n[B, 512, 4, 1]" as avgpool
+    card "Flatten\n[B, 2048]" as flatten
+}
+
+rectangle "FC Layers" as fc {
+    card "Linear(2048→512)\nSiLU" as fc1
+    card "Linear(512→512)" as fc2
+}
+
+rectangle "Output" as output {
+    card "z_r\n[B, 512]" as zr
+}
+
+r --> split
+split --> conv1
+conv1 --> conv2
+conv2 --> conv3
+conv3 --> conv4
+conv4 --> avgpool
+avgpool --> flatten
+flatten --> fc1
+fc1 --> fc2
+fc2 --> zr
+
+@enduml

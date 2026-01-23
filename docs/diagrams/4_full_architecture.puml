@@ -1,0 +1,84 @@
+@startuml
+title Noise-Conditioned SGMSE+ Full Architecture
+
+skinparam rectangle {
+    BackgroundColor<<encoder>> LightBlue
+    BackgroundColor<<backbone>> LightYellow
+    BackgroundColor<<input>> LightGray
+    BackgroundColor<<output>> LightGreen
+}
+
+rectangle "Inputs" <<input>> as inputs {
+    card "x_t\n(corrupted signal)\n[B, 1, F, T]" as xt
+    card "y\n(noisy observation)\n[B, 1, F, T]" as y
+    card "r\n(noise reference)\n[B, 1, F, T_ref]" as r
+    card "t\n(diffusion time)\n[B]" as t
+}
+
+rectangle "Noise Encoder" <<encoder>> as encoder {
+    card "Conv Layers\n↓\nAdaptivePool\n↓\nFC Layers" as enc_layers
+    card "z_r [B, 512]" as zr
+}
+
+rectangle "Time Processing" <<encoder>> as time_proc {
+    card "Fourier + MLP" as time_mlp
+    card "temb [B, 512]" as temb
+}
+
+rectangle "Conditioning Fusion" as fusion {
+    card "temb + z_r\nor\ngamma*temb + beta" as fuse
+    card "combined_emb" as combined
+}
+
+rectangle "NCSN++ U-Net" <<backbone>> as unet {
+    rectangle "Encoder Path" as enc_path {
+        card "Conv 4→128" as conv_in
+        card "ResBlock + Attn\n↓ Downsample" as down1
+        card "ResBlock + Attn\n↓ Downsample" as down2
+        card "..." as down_dots
+    }
+
+    rectangle "Bottleneck" as bottleneck {
+        card "ResBlock + Attn + ResBlock" as bottle
+    }
+
+    rectangle "Decoder Path" as dec_path {
+        card "..." as up_dots
+        card "Upsample ↑\nResBlock + Attn" as up2
+        card "Upsample ↑\nResBlock + Attn" as up1
+        card "Conv 128→2" as conv_out
+    }
+}
+
+rectangle "Output" <<output>> as output {
+    card "score\n∇_x log p(x|y,z_r)\n[B, 1, F, T]" as score
+}
+
+r --> enc_layers
+enc_layers --> zr
+t --> time_mlp
+time_mlp --> temb
+zr --> fuse
+temb --> fuse
+fuse --> combined
+
+xt --> conv_in
+y --> conv_in
+
+conv_in --> down1
+down1 --> down2
+down2 --> down_dots
+down_dots --> bottle
+bottle --> up_dots
+up_dots --> up2
+up2 --> up1
+up1 --> conv_out
+conv_out --> score
+
+combined -[dashed]-> down1 : inject
+combined -[dashed]-> down2 : inject
+combined -[dashed]-> bottle : inject
+combined -[dashed]-> up2 : inject
+combined -[dashed]-> up1 : inject
+
+@enduml

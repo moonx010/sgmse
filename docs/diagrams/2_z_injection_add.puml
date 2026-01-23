@@ -1,0 +1,49 @@
+@startuml
+title Noise Embedding Injection (Add Mode)
+
+skinparam rectangle {
+    BackgroundColor LightYellow
+    BorderColor Orange
+}
+
+rectangle "Time Embedding Path" as time_path {
+    card "t (diffusion time)" as t
+    card "GaussianFourierProjection\n[B, 256]" as fourier
+    card "Linear + SiLU + Linear\n[B, 512]" as time_mlp
+    card "temb [B, 512]" as temb
+}
+
+rectangle "Noise Embedding Path" as noise_path {
+    card "z_r [B, 512]" as zr
+    card "Linear + SiLU + Linear\n[B, 512]" as noise_proj
+    card "noise_emb [B, 512]" as noise_emb
+}
+
+rectangle "Combination" as combine {
+    card "temb = temb + noise_emb" as add
+    card "combined_emb [B, 512]" as combined
+}
+
+rectangle "ResBlocks" as resblocks {
+    card "ResBlock 1\nh = h + Dense(combined_emb)" as res1
+    card "ResBlock 2\nh = h + Dense(combined_emb)" as res2
+    card "..." as dots
+    card "ResBlock N\nh = h + Dense(combined_emb)" as resn
+}
+
+t --> fourier
+fourier --> time_mlp
+time_mlp --> temb
+temb --> add
+
+zr --> noise_proj
+noise_proj --> noise_emb
+noise_emb --> add
+
+add --> combined
+combined --> res1
+combined --> res2
+combined --> dots
+combined --> resn
+
+@enduml
