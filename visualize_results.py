@@ -198,23 +198,35 @@ def plot_demand_noise_types(df, output_dir):
     metrics = ['PESQ_mean', 'ESTOI_mean', 'SI-SDR_mean']
     metric_names = ['PESQ', 'ESTOI', 'SI-SDR (dB)']
 
-    # 1. Bar chart averaged over SNR
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-    df_avg = df_demand.groupby('Noise Type').agg({
+    # 1. Grouped bar chart by Clean Source (averaged over SNR)
+    fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+    df_avg = df_demand.groupby(['Noise Type', 'Clean Source']).agg({
         'PESQ_mean': 'mean',
         'ESTOI_mean': 'mean',
         'SI-SDR_mean': 'mean'
     }).reset_index()
 
+    noise_types = sorted(df_avg['Noise Type'].unique())
+    clean_sources = ['VoiceBank', 'LibriSpeech']
+    x = np.arange(len(noise_types))
+    width = 0.35
+    colors = {'VoiceBank': '#3498db', 'LibriSpeech': '#e74c3c'}
+
     for ax, metric, name in zip(axes, metrics, metric_names):
-        data = df_avg.sort_values(metric, ascending=True)
-        colors = plt.cm.Blues(np.linspace(0.4, 0.9, len(data)))
-        ax.barh(data['Noise Type'], data[metric], color=colors)
+        for i, clean_src in enumerate(clean_sources):
+            data = df_avg[df_avg['Clean Source'] == clean_src].set_index('Noise Type')
+            values = [data.loc[nt, metric] if nt in data.index else 0 for nt in noise_types]
+            offset = (i - 0.5) * width
+            ax.barh(x + offset, values, width, label=clean_src, color=colors[clean_src])
+
+        ax.set_yticks(x)
+        ax.set_yticklabels(noise_types)
         ax.set_xlabel(name)
         ax.set_title(f'{name} by DEMAND Noise Type')
+        ax.legend(loc='lower right')
         ax.grid(True, alpha=0.3, axis='x')
 
-    plt.suptitle('DEMAND Noise Types (in-domain)', fontsize=12, fontweight='bold')
+    plt.suptitle('DEMAND Noise Types (in-domain) - by Clean Source', fontsize=12, fontweight='bold')
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'demand_noise_types.png'), dpi=150, bbox_inches='tight')
     plt.savefig(os.path.join(output_dir, 'demand_noise_types.pdf'), bbox_inches='tight')
@@ -266,23 +278,35 @@ def plot_esc50_noise_types(df, output_dir):
     metrics = ['PESQ_mean', 'ESTOI_mean', 'SI-SDR_mean']
     metric_names = ['PESQ', 'ESTOI', 'SI-SDR (dB)']
 
-    # 1. Bar chart averaged over SNR
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-    df_avg = df_esc.groupby('Noise Type').agg({
+    # 1. Grouped bar chart by Clean Source (averaged over SNR)
+    fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+    df_avg = df_esc.groupby(['Noise Type', 'Clean Source']).agg({
         'PESQ_mean': 'mean',
         'ESTOI_mean': 'mean',
         'SI-SDR_mean': 'mean'
     }).reset_index()
 
+    noise_types = sorted(df_avg['Noise Type'].unique())
+    clean_sources = ['VoiceBank', 'LibriSpeech']
+    x = np.arange(len(noise_types))
+    width = 0.35
+    colors = {'VoiceBank': '#3498db', 'LibriSpeech': '#e74c3c'}
+
     for ax, metric, name in zip(axes, metrics, metric_names):
-        data = df_avg.sort_values(metric, ascending=True)
-        colors = plt.cm.Oranges(np.linspace(0.4, 0.9, len(data)))
-        ax.barh(data['Noise Type'], data[metric], color=colors)
+        for i, clean_src in enumerate(clean_sources):
+            data = df_avg[df_avg['Clean Source'] == clean_src].set_index('Noise Type')
+            values = [data.loc[nt, metric] if nt in data.index else 0 for nt in noise_types]
+            offset = (i - 0.5) * width
+            ax.barh(x + offset, values, width, label=clean_src, color=colors[clean_src])
+
+        ax.set_yticks(x)
+        ax.set_yticklabels(noise_types)
         ax.set_xlabel(name)
         ax.set_title(f'{name} by ESC-50 Category')
+        ax.legend(loc='lower right')
         ax.grid(True, alpha=0.3, axis='x')
 
-    plt.suptitle('ESC-50 Noise Categories (OOD)', fontsize=12, fontweight='bold')
+    plt.suptitle('ESC-50 Noise Categories (OOD) - by Clean Source', fontsize=12, fontweight='bold')
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'esc50_noise_types.png'), dpi=150, bbox_inches='tight')
     plt.savefig(os.path.join(output_dir, 'esc50_noise_types.pdf'), bbox_inches='tight')
