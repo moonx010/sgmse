@@ -42,13 +42,24 @@ if __name__ == '__main__':
         x, sr_x = read(clean_path)
         y, sr_y = read(join(args.noisy_dir, filename))
         x_hat, sr_x_hat = read(join(args.enhanced_dir, filename))
-        assert sr_x == sr_y == sr_x_hat
+
+        # Resample if sample rates don't match
+        target_sr = sr_x
+        if sr_y != target_sr:
+            y = librosa.resample(y, orig_sr=sr_y, target_sr=target_sr)
+        if sr_x_hat != target_sr:
+            x_hat = librosa.resample(x_hat, orig_sr=sr_x_hat, target_sr=target_sr)
+
+        # Ensure same length
+        min_len = min(len(x), len(y), len(x_hat))
+        x, y, x_hat = x[:min_len], y[:min_len], x_hat[:min_len]
+
         n = y - x 
-        x_hat_16k = librosa.resample(x_hat, orig_sr=sr_x_hat, target_sr=16000) if sr_x_hat != 16000 else x_hat
-        x_16k = librosa.resample(x, orig_sr=sr_x, target_sr=16000) if sr_x != 16000 else x
+        x_hat_16k = librosa.resample(x_hat, orig_sr=target_sr, target_sr=16000) if target_sr != 16000 else x_hat
+        x_16k = librosa.resample(x, orig_sr=target_sr, target_sr=16000) if target_sr != 16000 else x
         data["filename"].append(filename)
         data["pesq"].append(pesq(16000, x_16k, x_hat_16k, 'wb'))
-        data["estoi"].append(stoi(x, x_hat, sr_x, extended=True))
+        data["estoi"].append(stoi(x, x_hat, target_sr, extended=True))
         data["si_sdr"].append(energy_ratios(x_hat, x, n)[0])
         data["si_sir"].append(energy_ratios(x_hat, x, n)[1])
         data["si_sar"].append(energy_ratios(x_hat, x, n)[2])
