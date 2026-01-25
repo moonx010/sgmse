@@ -338,3 +338,7 @@ $RECYCLE.BIN/
 /data/
 /results/
 /evaluation_results/
+
+## Enhanced output directories
+enhanced_*/
+temp_eval_splits/
