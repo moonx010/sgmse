@@ -251,9 +251,24 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ---
 
-## 3. Experimental Design
+## 3. Task Priority and Experiment Tracking
 
-### 3.1 Phase 1: Classifier-Free Guidance (Priority: High)
+### 3.0 Task Priority (Expected Impact Order)
+
+| Rank | Task | Expected Impact | Difficulty | Status |
+|------|------|-----------------|------------|--------|
+| 1 | **CFG Implementation** | ⭐⭐⭐⭐⭐ | Low | 🔲 Not Started |
+| 2 | **CLAP Encoder** | ⭐⭐⭐⭐⭐ | Medium | 🔲 Not Started |
+| 3 | **Noise Augmentation** | ⭐⭐⭐ | Low | 🔲 Not Started |
+| 4 | **Cross-Attention** | ⭐⭐⭐ | High | 🔲 Not Started |
+
+**Legend**: 🔲 Not Started | 🔄 In Progress | ✅ Completed | ❌ Abandoned
+
+---
+
+## 4. Experimental Design
+
+### 4.1 Phase 1: Classifier-Free Guidance (Priority: High)
 
 **Objective**: Validate CFG improves OOD generalization with minimal changes.
 
@@ -279,7 +294,7 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ---
 
-### 3.2 Phase 2: Pre-trained Encoder (Priority: High)
+### 4.2 Phase 2: Pre-trained Encoder (Priority: High)
 
 **Objective**: Test if CLAP embeddings generalize better than from-scratch encoder.
 
@@ -303,7 +318,7 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ---
 
-### 3.3 Phase 3: Cross-Attention (Priority: Medium)
+### 4.3 Phase 3: Cross-Attention (Priority: Medium)
 
 **Objective**: Test if cross-attention helps with non-stationary noise.
 
@@ -322,7 +337,7 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ---
 
-### 3.4 Phase 4: Combined Approach (Priority: Medium)
+### 4.4 Phase 4: Combined Approach (Priority: Medium)
 
 **Objective**: Find best combination of improvements.
 
@@ -336,9 +351,107 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ---
 
-## 4. Implementation Roadmap
+---
 
-### 4.1 Immediate (This Week)
+## 5. Experiment Results
+
+### 5.1 Phase 1: CFG Results
+
+#### Training Runs
+
+| Exp ID | p_uncond | batch_size | steps | wandb_name | Checkpoint | Status |
+|--------|----------|------------|-------|------------|------------|--------|
+| CFG-01 | 0.1 | 4 | 50k | nc-cfg-p0.1 | TBD | 🔲 |
+| CFG-02 | 0.2 | 4 | 50k | nc-cfg-p0.2 | TBD | 🔲 |
+
+#### In-Distribution Results (VB-DEMAND Test)
+
+| Exp ID | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|---|--------|---------|----------|
+| CFG-01 | 1.0 | TBD | TBD | TBD |
+| CFG-01 | 3.0 | TBD | TBD | TBD |
+| CFG-01 | 5.0 | TBD | TBD | TBD |
+| CFG-02 | 1.0 | TBD | TBD | TBD |
+| CFG-02 | 3.0 | TBD | TBD | TBD |
+| CFG-02 | 5.0 | TBD | TBD | TBD |
+
+#### OOD Results (ESC-50 Noise, SNR 0dB)
+
+| Exp ID | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|---|--------|---------|----------|
+| Baseline (no CFG) | - | TBD | TBD | TBD |
+| CFG-01 | 1.0 | TBD | TBD | TBD |
+| CFG-01 | 3.0 | TBD | TBD | TBD |
+| CFG-01 | 5.0 | TBD | TBD | TBD |
+| CFG-02 | 1.0 | TBD | TBD | TBD |
+| CFG-02 | 3.0 | TBD | TBD | TBD |
+| CFG-02 | 5.0 | TBD | TBD | TBD |
+
+---
+
+### 5.2 Phase 2: CLAP Encoder Results
+
+#### Training Runs
+
+| Exp ID | Encoder | Freeze | steps | wandb_name | Checkpoint | Status |
+|--------|---------|--------|-------|------------|------------|--------|
+| CLAP-01 | CLAP | Yes | 50k | nc-clap-frozen | TBD | 🔲 |
+| CLAP-02 | CLAP | No | 50k | nc-clap-finetune | TBD | 🔲 |
+| CLAP-CFG | CLAP + CFG | Yes | 50k | nc-clap-cfg | TBD | 🔲 |
+
+#### In-Distribution Results (VB-DEMAND Test)
+
+| Exp ID | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|--------|---------|----------|
+| CLAP-01 | TBD | TBD | TBD |
+| CLAP-02 | TBD | TBD | TBD |
+| CLAP-CFG | TBD | TBD | TBD |
+
+#### OOD Results (ESC-50 Noise, SNR 0dB)
+
+| Exp ID | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|--------|---------|----------|
+| CLAP-01 | TBD | TBD | TBD |
+| CLAP-02 | TBD | TBD | TBD |
+| CLAP-CFG | TBD | TBD | TBD |
+
+---
+
+### 5.3 Phase 3: Cross-Attention Results
+
+#### Training Runs
+
+| Exp ID | Architecture | steps | wandb_name | Checkpoint | Status |
+|--------|--------------|-------|------------|------------|--------|
+| XAttn-01 | Cross-Attn | 50k | nc-xattn | TBD | 🔲 |
+| XAttn-CFG | Cross-Attn + CFG | 50k | nc-xattn-cfg | TBD | 🔲 |
+
+#### Non-Stationary Noise Results
+
+| Exp ID | Noise Type | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|------------|--------|---------|----------|
+| Baseline (Global Pool) | Non-stationary | TBD | TBD | TBD |
+| XAttn-01 | Non-stationary | TBD | TBD | TBD |
+| XAttn-CFG | Non-stationary | TBD | TBD | TBD |
+
+---
+
+### 5.4 Comparison Summary
+
+| Method | VB-DEMAND PESQ | OOD PESQ | Non-stat PESQ | Notes |
+|--------|----------------|----------|---------------|-------|
+| Baseline (no cond) | 1.95 | TBD | TBD | Reference |
+| Noise-Cond (current) | 1.80 | TBD | TBD | Current PoC |
+| + CFG | TBD | TBD | TBD | Phase 1 |
+| + CLAP | TBD | TBD | TBD | Phase 2 |
+| + Cross-Attn | TBD | TBD | TBD | Phase 3 |
+| Combined Best | TBD | TBD | TBD | Final |
+
+---
+
+## 6. Implementation Roadmap
+
+### 6.1 Immediate (This Week)
 
 1. **CFG Implementation**
    - [ ] Add `cond_drop_prob` to `NoiseCondScoreModel`
@@ -346,7 +459,7 @@ class ResBlockWithCrossAttention(nn.Module):
    - [ ] Add guidance scale to enhancement script
    - [ ] Run CFG experiments
 
-### 4.2 Short-term (Next 2 Weeks)
+### 6.2 Short-term (Next 2 Weeks)
 
 2. **CLAP Integration**
    - [ ] Create `CLAPNoiseEncoder` class
@@ -354,7 +467,7 @@ class ResBlockWithCrossAttention(nn.Module):
    - [ ] Test frozen vs fine-tuned CLAP
    - [ ] Run CLAP experiments
 
-### 4.3 Medium-term (Month)
+### 6.3 Medium-term (Month)
 
 3. **Cross-Attention Architecture**
    - [ ] Implement `SequenceNoiseEncoder`
@@ -369,9 +482,9 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ---
 
-## 5. Success Metrics
+## 7. Success Metrics
 
-### 5.1 Primary Metrics
+### 7.1 Primary Metrics
 
 | Scenario | Target Improvement |
 |----------|-------------------|
@@ -379,7 +492,7 @@ class ResBlockWithCrossAttention(nn.Module):
 | OOD (ESC-50 noise) | >0.3 PESQ improvement over no-conditioning |
 | Non-stationary noise | >0.2 PESQ improvement over global pooling |
 
-### 5.2 Secondary Metrics
+### 7.2 Secondary Metrics
 
 - Training convergence speed
 - Inference latency
@@ -387,7 +500,7 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ---
 
-## 6. References
+## 8. References
 
 1. [Ho & Salimans 2022] Classifier-Free Diffusion Guidance
 2. [AudioLDM 2023] Text-to-Audio Generation with Latent Diffusion Models
