@@ -331,3 +331,102 @@ This ensures perfect environment matching.
 - Probabilistic interpretation of noise embeddings
 
 This document is intended to evolve alongside ongoing experiments.
+
+---
+
+## 10. Experiment Log
+
+### 10.1 Training Setup
+
+| Model | Dataset | Steps | Epochs | Batch Size | GPUs |
+|-------|---------|-------|--------|------------|------|
+| Noise-Cond (Ours) | VoiceBank-DEMAND | 50,000 | 138 | 8 | 4 |
+| Baseline (Ours) | VoiceBank-DEMAND | 50,000 | - | 4 (×2 accum) | 1 |
+| Baseline (Pretrained) | VoiceBank-DEMAND | 41,992 | 116 | - | - |
+
+- **Training data duration**: ~10 hours (VoiceBank-DEMAND train set)
+- **Noise-cond checkpoint**: `lightning_logs/version_0/checkpoints/epoch=138-step=50000.ckpt`
+- **Baseline 50k checkpoint**: `logs/[RUN_ID]/last.ckpt`
+
+---
+
+### 10.2 In-Distribution Results (VoiceBank-DEMAND Test Set)
+
+| Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|-------|--------|---------|----------|
+| Noisy (input) | - | - | - |
+| Baseline (Pretrained 42k) | 2.91 ± 0.62 | 0.86 ± 0.10 | 16.9 ± 3.1 |
+| Baseline (Ours 50k) | TBD | TBD | TBD |
+| Noise-Cond (Ours 50k) | 1.80 ± 0.53 | 0.73 ± 0.17 | 12.5 ± 5.3 |
+
+**Observation**: On in-distribution data (DEMAND noise), the pretrained baseline significantly outperforms the noise-cond model. This is expected since the baseline already learned DEMAND noise patterns during training.
+
+---
+
+### 10.3 Out-of-Distribution Results (ESC-50 Noise)
+
+Test set: VoiceBank clean + ESC-50 noise (`vb_esc50`)
+
+#### SNR 0 dB
+
+| Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|-------|--------|---------|----------|
+| Noisy (input) | - | - | - |
+| Baseline (Pretrained 42k) | TBD | TBD | TBD |
+| Baseline (Ours 50k) | TBD | TBD | TBD |
+| Noise-Cond (Ours 50k) | TBD | TBD | TBD |
+
+#### SNR 5 dB
+
+| Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|-------|--------|---------|----------|
+| Noisy (input) | - | - | - |
+| Baseline (Pretrained 42k) | TBD | TBD | TBD |
+| Baseline (Ours 50k) | TBD | TBD | TBD |
+| Noise-Cond (Ours 50k) | TBD | TBD | TBD |
+
+#### SNR 10 dB
+
+| Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|-------|--------|---------|----------|
+| Noisy (input) | - | - | - |
+| Baseline (Pretrained 42k) | TBD | TBD | TBD |
+| Baseline (Ours 50k) | TBD | TBD | TBD |
+| Noise-Cond (Ours 50k) | TBD | TBD | TBD |
+
+---
+
+### 10.4 Key Findings
+
+1. **In-distribution performance**: Noise conditioning does not improve performance on noise types seen during training (DEMAND). The baseline model already captures these noise patterns.
+
+2. **OOD generalization**: TBD - This is the key hypothesis to verify. Noise-cond should help on unseen noise types.
+
+3. **Training efficiency**: Both models trained for similar number of epochs/steps for fair comparison.
+
+---
+
+### 10.5 Commands Reference
+
+**Training:**
+```bash
+# Noise-cond
+CUDA_VISIBLE_DEVICES=4,5,6,7 python train_noise_cond.py --base_dir ./data/voicebank-demand --gpus 4 --max_steps 50000
+
+# Baseline
+CUDA_VISIBLE_DEVICES=2 python train.py --base_dir ./data/voicebank-demand --backbone ncsnpp --devices 1 --max_steps 50000 --batch_size 4 --accumulate_grad_batches 2
+```
+
+**Enhancement:**
+```bash
+# Noise-cond (with oracle noise reference)
+python enhancement_noise_cond.py --test_dir ./data/test_dir --enhanced_dir ./enhanced_dir --ckpt CKPT_PATH --oracle_noise --clean_dir ./clean_dir --N 30 --device cuda
+
+# Baseline
+python enhancement.py --test_dir ./data/test_dir/noisy --enhanced_dir ./enhanced_dir --ckpt CKPT_PATH --N 30 --device cuda
+```
+
+**Metrics:**
+```bash
+python calc_metrics.py --clean_dir ./clean_dir --noisy_dir ./noisy_dir --enhanced_dir ./enhanced_dir
+```
