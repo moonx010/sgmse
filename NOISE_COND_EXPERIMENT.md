@@ -336,7 +336,27 @@ This document is intended to evolve alongside ongoing experiments.
 
 ## 10. Experiment Log
 
-### 10.1 Training Setup
+### 10.1 Reference: Paper Training Configuration (TASLP 2023)
+
+| Setting | Value |
+|---------|-------|
+| GPUs | 4× Quadro RTX 6000 (24GB) |
+| Batch size per GPU | 8 |
+| Effective batch size | 32 |
+| Epochs | 160 |
+| Estimated steps | ~58k |
+| Total samples seen | ~1.85M |
+| Optimizer | Adam, lr=1e-4 |
+| EMA decay | 0.999 |
+| STFT | window=510, hop=128, frames=256 |
+| SDE params | σ_min=0.05, σ_max=0.5, γ=1.5 |
+| Sampling | N=30, 1 corrector step, r=0.5 |
+
+**Note**: Full paper configuration requires ~160 epochs for best performance. Current PoC experiments use shorter training for faster iteration.
+
+---
+
+### 10.2 Training Setup (PoC Experiments)
 
 | Model | Dataset | Steps | Epochs | Batch Size | GPUs |
 |-------|---------|-------|--------|------------|------|
@@ -352,7 +372,7 @@ This document is intended to evolve alongside ongoing experiments.
 
 ---
 
-### 10.2 In-Distribution Results (VoiceBank-DEMAND Test Set)
+### 10.3 In-Distribution Results (VoiceBank-DEMAND Test Set)
 
 | Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
 |-------|--------|---------|----------|
@@ -368,7 +388,7 @@ This document is intended to evolve alongside ongoing experiments.
 
 ---
 
-### 10.3 Out-of-Distribution Results (ESC-50 Noise)
+### 10.4 Out-of-Distribution Results (ESC-50 Noise)
 
 Test set: VoiceBank clean + ESC-50 noise (`vb_esc50`)
 
@@ -401,7 +421,7 @@ Test set: VoiceBank clean + ESC-50 noise (`vb_esc50`)
 
 ---
 
-### 10.4 Ablation Study: Noise Reference Length
+### 10.5 Ablation Study: Noise Reference Length
 
 **Goal**: Test whether longer noise reference improves performance.
 
@@ -458,7 +478,7 @@ CUDA_VISIBLE_DEVICES=5 python train_noise_cond.py --base_dir ./data/voicebank-de
 
 ---
 
-### 10.5 Key Findings
+### 10.6 Key Findings
 
 1. **In-distribution performance**: Noise conditioning does not improve performance on noise types seen during training (DEMAND). The baseline model already captures these noise patterns.
 
@@ -470,7 +490,7 @@ CUDA_VISIBLE_DEVICES=5 python train_noise_cond.py --base_dir ./data/voicebank-de
 
 ---
 
-### 10.6 Commands Reference
+### 10.7 Commands Reference
 
 **Training:**
 ```bash
