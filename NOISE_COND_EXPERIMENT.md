@@ -401,7 +401,64 @@ Test set: VoiceBank clean + ESC-50 noise (`vb_esc50`)
 
 ---
 
-### 10.4 Key Findings
+### 10.4 Ablation Study: Noise Reference Length
+
+**Goal**: Test whether longer noise reference improves performance.
+
+**Setup**:
+- All models trained with batch_size=4 for fair comparison with baseline
+- 50k steps each
+- VoiceBank-DEMAND dataset
+- WandB logging enabled
+
+| Experiment ID | ref_length_sec | ref_num_frames | wandb_name | Status |
+|---------------|----------------|----------------|------------|--------|
+| NC-ref025 | 0.25s | 32 | nc-ref-0.25s | Pending |
+| NC-ref05 | 0.5s | 63 | nc-ref-0.5s | Pending |
+| NC-ref1 | 1.0s | 126 | nc-ref-1.0s | Pending |
+| NC-ref2 | 2.0s | 251 | nc-ref-2.0s | Pending |
+
+**Frame calculation** (16kHz, hop_length=128):
+```
+ref_num_frames = int(ref_length_sec * 16000 / 128) + 1
+```
+
+**Training Commands**:
+```bash
+# Reference 0.25s
+CUDA_VISIBLE_DEVICES=2 python train_noise_cond.py --base_dir ./data/voicebank-demand --devices 1 --max_steps 50000 --batch_size 4 --ref_length_sec 0.25 --wandb_name nc-ref-0.25s
+
+# Reference 0.5s
+CUDA_VISIBLE_DEVICES=3 python train_noise_cond.py --base_dir ./data/voicebank-demand --devices 1 --max_steps 50000 --batch_size 4 --ref_length_sec 0.5 --wandb_name nc-ref-0.5s
+
+# Reference 1.0s
+CUDA_VISIBLE_DEVICES=4 python train_noise_cond.py --base_dir ./data/voicebank-demand --devices 1 --max_steps 50000 --batch_size 4 --ref_length_sec 1.0 --wandb_name nc-ref-1.0s
+
+# Reference 2.0s
+CUDA_VISIBLE_DEVICES=5 python train_noise_cond.py --base_dir ./data/voicebank-demand --devices 1 --max_steps 50000 --batch_size 4 --ref_length_sec 2.0 --wandb_name nc-ref-2.0s
+```
+
+**Results (VB-DEMAND Test Set)**:
+
+| ref_length | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ | Checkpoint |
+|------------|--------|---------|----------|------------|
+| 0.25s | TBD | TBD | TBD | TBD |
+| 0.5s | TBD | TBD | TBD | TBD |
+| 1.0s | TBD | TBD | TBD | TBD |
+| 2.0s | TBD | TBD | TBD | TBD |
+
+**Results (OOD - ESC-50 Noise)**:
+
+| ref_length | SNR | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|------------|-----|--------|---------|----------|
+| 0.25s | 0dB | TBD | TBD | TBD |
+| 0.5s | 0dB | TBD | TBD | TBD |
+| 1.0s | 0dB | TBD | TBD | TBD |
+| 2.0s | 0dB | TBD | TBD | TBD |
+
+---
+
+### 10.5 Key Findings
 
 1. **In-distribution performance**: Noise conditioning does not improve performance on noise types seen during training (DEMAND). The baseline model already captures these noise patterns.
 
@@ -409,9 +466,11 @@ Test set: VoiceBank clean + ESC-50 noise (`vb_esc50`)
 
 3. **Training efficiency**: Both models trained for similar number of epochs/steps for fair comparison.
 
+4. **Reference length effect**: TBD - Ablation study in progress.
+
 ---
 
-### 10.5 Commands Reference
+### 10.6 Commands Reference
 
 **Training:**
 ```bash
