@@ -341,8 +341,10 @@ This document is intended to evolve alongside ongoing experiments.
 | Model | Dataset | Steps | Epochs | Batch Size | GPUs |
 |-------|---------|-------|--------|------------|------|
 | Noise-Cond (Ours) | VoiceBank-DEMAND | 50,000 | 138 | 8 | 4 |
-| Baseline (Ours) | VoiceBank-DEMAND | 50,000 | - | 4 (×2 accum) | 1 |
+| Baseline (Ours) | VoiceBank-DEMAND | 50,000 | - | 4 | 1 |
 | Baseline (Pretrained) | VoiceBank-DEMAND | 41,992 | 116 | - | - |
+
+**Note**: Baseline (Ours) used batch_size=4 due to GPU memory constraints. Noise-Cond used batch_size=8 with 4 GPUs. This difference may affect fair comparison.
 
 - **Training data duration**: ~10 hours (VoiceBank-DEMAND train set)
 - **Noise-cond checkpoint**: `lightning_logs/version_0/checkpoints/epoch=138-step=50000.ckpt`
@@ -356,10 +358,13 @@ This document is intended to evolve alongside ongoing experiments.
 |-------|--------|---------|----------|
 | Noisy (input) | - | - | - |
 | Baseline (Pretrained 42k) | 2.91 ± 0.62 | 0.86 ± 0.10 | 16.9 ± 3.1 |
-| Baseline (Ours 50k) | TBD | TBD | TBD |
-| Noise-Cond (Ours 50k) | 1.80 ± 0.53 | 0.73 ± 0.17 | 12.5 ± 5.3 |
+| Baseline (Ours 50k, bs=4) | 1.95 ± 0.66 | 0.76 ± 0.17 | 12.8 ± 4.8 |
+| Noise-Cond (Ours 50k, bs=8) | 1.80 ± 0.53 | 0.73 ± 0.17 | 12.5 ± 5.3 |
 
-**Observation**: On in-distribution data (DEMAND noise), the pretrained baseline significantly outperforms the noise-cond model. This is expected since the baseline already learned DEMAND noise patterns during training.
+**Observation**:
+- Pretrained baseline (42k steps) significantly outperforms both 50k models, likely due to longer effective training or hyperparameter differences.
+- Baseline 50k (bs=4) vs Noise-Cond 50k (bs=8): Similar performance on in-distribution data. Noise-cond slightly lower, but batch size difference may affect comparison.
+- Fair comparison requires same batch size. Consider retraining with matched settings.
 
 ---
 
