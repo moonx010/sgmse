@@ -490,7 +490,54 @@ CUDA_VISIBLE_DEVICES=5 python train_noise_cond.py --base_dir ./data/voicebank-de
 
 ---
 
-### 10.7 Commands Reference
+### 10.7 Identified Limitations and Proposed Improvements
+
+> **Detailed analysis**: See [docs/NOISE_COND_IMPROVEMENTS.md](docs/NOISE_COND_IMPROVEMENTS.md)
+
+#### 10.7.1 Problem Analysis
+
+| Issue | Description | Impact |
+|-------|-------------|--------|
+| **Embedding Space Coverage** | Noise encoder trained only on DEMAND noise | Poor OOD generalization |
+| **Stationary Assumption** | Global pooling loses temporal information | Cannot handle non-stationary noise |
+| **No Unconditional Baseline** | Model may ignore weak conditioning | Conditioning collapse risk |
+
+#### 10.7.2 Proposed Solutions
+
+| Solution | Priority | Implementation | Expected Benefit |
+|----------|----------|----------------|------------------|
+| **Classifier-Free Guidance (CFG)** | High | Add conditioning dropout | Better OOD, controllable guidance |
+| **Pre-trained Encoder (CLAP)** | High | Replace noise encoder | Generalized representations |
+| **Cross-Attention** | Medium | Modify architecture | Non-stationary noise handling |
+| **Noise Augmentation** | Low | Add training data | Broader coverage |
+
+#### 10.7.3 Planned Experiments
+
+**Phase 1: CFG (Immediate)**
+```bash
+# Training with conditioning dropout
+python train_noise_cond.py --base_dir ./data/voicebank-demand \
+    --devices 1 --max_steps 50000 --batch_size 4 \
+    --cond_drop_prob 0.1 --wandb_name nc-cfg-p0.1
+
+# Inference with guidance scale
+python enhancement_noise_cond.py --test_dir ... \
+    --guidance_scale 3.0
+```
+
+**Phase 2: CLAP Integration**
+- Replace `NoiseEncoder` with `CLAPNoiseEncoder`
+- Test frozen vs fine-tuned CLAP weights
+- Evaluate on OOD noise
+
+**Phase 3: Cross-Attention**
+- Implement sequence-based noise encoding
+- Add cross-attention to ResBlocks
+- Test on non-stationary noise
+
+---
+
+### 10.8 Commands Reference
 
 **Training:**
 ```bash
