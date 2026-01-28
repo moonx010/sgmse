@@ -4,11 +4,14 @@
 Usage:
     python scripts/eval_batch.py --phase enhance --gpus 0,1,2,3
     python scripts/eval_batch.py --phase metrics
+    python scripts/eval_batch.py --phase all --gpus 0,1,2,3
 """
 
 import os
+import re
 import subprocess
 import argparse
+from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 
 # ============================================
@@ -31,6 +34,7 @@ DATASETS = [
 
 N_STEPS = 30
 OUTPUT_BASE = "./enhanced"
+RESULTS_DIR = "./evaluation_results"
 
 # ============================================
 # END CONFIGURATION
@@ -68,8 +72,8 @@ def run_enhancement(gpu_id, exp_name, ckpt_path, cfg_scale, dataset_suffix, test
     return result.returncode
 
 
-def run_metrics(exp_name, dataset_suffix, clean_dir, noisy_dir):
-    """Run metrics calculation."""
+def run_metrics(exp_name, cfg_scale, dataset_suffix, clean_dir, noisy_dir):
+    """Run metrics calculation and return parsed results."""
     output_dir = f"{OUTPUT_BASE}_{exp_name}{dataset_suffix}"
 
     cmd = [
@@ -80,17 +84,86 @@ def run_metrics(exp_name, dataset_suffix, clean_dir, noisy_dir):
     ]
 
     print(f"\n=== {exp_name}{dataset_suffix} ===")
-    result = subprocess.run(cmd)
-    return result.returncode
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    print(result.stdout)
+
+    # Parse metrics from output
+    metrics = {
+        "experiment": exp_name,
+        "dataset": "VB-DEMAND" if dataset_suffix == "" else "OOD (ESC-50)",
+        "cfg_scale": cfg_scale,
+    }
+
+    # Parse PESQ, ESTOI, SI-SDR from stdout
+    for line in result.stdout.split("\n"):
+        if "PESQ:" in line:
+            match = re.search(r"PESQ:\s*([\d.]+)", line)
+            if match:
+                metrics["PESQ"] = float(match.group(1))
+        elif "ESTOI:" in line:
+            match = re.search(r"ESTOI:\s*([\d.]+)", line)
+            if match:
+                metrics["ESTOI"] = float(match.group(1))
+        elif "SI-SDR:" in line:
+            match = re.search(r"SI-SDR:\s*([\d.-]+)", line)
+            if match:
+                metrics["SI-SDR"] = float(match.group(1))
+
+    return metrics
+
+
+def save_results(all_results, output_path):
+    """Save results to CSV and markdown files."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    # Save as CSV
+    csv_path = output_path + ".csv"
+    with open(csv_path, "w") as f:
+        headers = ["experiment", "dataset", "cfg_scale", "PESQ", "ESTOI", "SI-SDR"]
+        f.write(",".join(headers) + "\n")
+        for r in all_results:
+            row = [str(r.get(h, "")) for h in headers]
+            f.write(",".join(row) + "\n")
+    print(f"\nResults saved to: {csv_path}")
+
+    # Save as Markdown table
+    md_path = output_path + ".md"
+    with open(md_path, "w") as f:
+        f.write(f"# Evaluation Results\n\n")
+        f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+
+        # In-distribution results
+        f.write("## In-Distribution (VB-DEMAND)\n\n")
+        f.write("| Experiment | CFG Scale | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |\n")
+        f.write("|------------|-----------|--------|---------|----------|\n")
+        for r in all_results:
+            if r["dataset"] == "VB-DEMAND":
+                f.write(f"| {r['experiment']} | {r['cfg_scale']} | {r.get('PESQ', '-'):.2f} | {r.get('ESTOI', '-'):.2f} | {r.get('SI-SDR', '-'):.1f} |\n")
+
+        # OOD results
+        f.write("\n## Out-of-Distribution (ESC-50 Noise, SNR 0dB)\n\n")
+        f.write("| Experiment | CFG Scale | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |\n")
+        f.write("|------------|-----------|--------|---------|----------|\n")
+        for r in all_results:
+            if r["dataset"] != "VB-DEMAND":
+                f.write(f"| {r['experiment']} | {r['cfg_scale']} | {r.get('PESQ', '-'):.2f} | {r.get('ESTOI', '-'):.2f} | {r.get('SI-SDR', '-'):.1f} |\n")
+
+    print(f"Results saved to: {md_path}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--phase", choices=["enhance", "metrics", "all"], default="all")
     parser.add_argument("--gpus", type=str, default="0,1,2,3", help="Comma-separated GPU IDs")
+    parser.add_argument("--output", type=str, default=None, help="Output file path (without extension)")
     args = parser.parse_args()
 
     gpu_ids = [int(g) for g in args.gpus.split(",")]
+
+    # Default output path
+    if args.output is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        args.output = os.path.join(RESULTS_DIR, f"eval_{timestamp}")
 
     # Build task list
     tasks = []
@@ -137,13 +210,19 @@ def main():
     if args.phase in ["metrics", "all"]:
         print("\nCalculating metrics...")
 
+        all_results = []
         for task in tasks:
-            run_metrics(
+            metrics = run_metrics(
                 task["exp_name"],
+                task["cfg_scale"],
                 task["dataset_suffix"],
                 task["clean_dir"],
                 task["noisy_dir"]
             )
+            all_results.append(metrics)
+
+        # Save consolidated results
+        save_results(all_results, args.output)
 
         print("\nMetrics complete!")
 
