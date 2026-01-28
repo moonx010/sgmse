@@ -104,16 +104,11 @@ class CLAPNoiseEncoder(nn.Module):
         # Resample to 48kHz for CLAP
         r_48k = self._resample(r)  # [B, T']
 
-        # Get CLAP embeddings
-        if self.freeze_clap:
-            with torch.no_grad():
-                # CLAP's get_audio_embedding_from_data expects list of numpy arrays
-                # or we can use the internal method
-                emb = self._get_clap_embedding(r_48k)
-        else:
+        # Get CLAP embeddings (always with no_grad for CLAP part)
+        with torch.no_grad():
             emb = self._get_clap_embedding(r_48k)
 
-        # Project to desired dimension
+        # Project to desired dimension (this part is trainable)
         z_r = self.proj(emb)
 
         return z_r
@@ -128,20 +123,21 @@ class CLAPNoiseEncoder(nn.Module):
         Returns:
             embedding: [B, 512] CLAP embedding
         """
+        device = audio.device
+
         # Normalize audio to [-1, 1] range
         audio = audio / (audio.abs().max(dim=-1, keepdim=True)[0] + 1e-8)
 
-        # CLAP expects specific input format
-        # Using the model's audio encoder directly
-        audio_dict = {
-            'waveform': audio.unsqueeze(1),  # [B, 1, T]
-            'sample_rate': self.clap_sr
-        }
+        # CLAP's get_audio_embedding_from_data expects numpy array
+        audio_np = audio.cpu().numpy()
 
-        # Get embeddings through CLAP's audio encoder
-        embed = self.clap.model.get_audio_embedding(audio_dict)
+        # Get embeddings
+        embed = self.clap.get_audio_embedding_from_data(
+            x=audio_np,
+            use_tensor=True
+        )
 
-        return embed
+        return embed.to(device)
 
 
 class CLAPNoiseEncoderSimple(nn.Module):
