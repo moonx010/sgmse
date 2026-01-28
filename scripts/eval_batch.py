@@ -20,10 +20,14 @@ from concurrent.futures import ProcessPoolExecutor
 
 EXPERIMENTS = [
     # (name, checkpoint_path, cfg_scale)
-    ("nc_ref0.25s", "./logs/zqtm721z-nc-ref-0.25s/step=50000.ckpt", 1.0),
-    ("nc_ref0.5s", "./logs/7tucs4jy-nc-ref-0.5s/step=50000.ckpt", 1.0),
-    ("nc_ref1.0s", "./logs/sr8toljy-nc-ref-1.0s/step=50000.ckpt", 1.0),
-    ("nc_ref2.0s", "./logs/5xbd359r-nc-ref-2.0s/step=50000.ckpt", 1.0),
+    # CFG p_uncond=0.1
+    ("cfg_p0.1_w1.0", "./logs/e8f9ztov-None/step=50000.ckpt", 1.0),
+    ("cfg_p0.1_w3.0", "./logs/e8f9ztov-None/step=50000.ckpt", 3.0),
+    ("cfg_p0.1_w5.0", "./logs/e8f9ztov-None/step=50000.ckpt", 5.0),
+    # CFG p_uncond=0.2
+    ("cfg_p0.2_w1.0", "./logs/kvue4el4-None/step=50000.ckpt", 1.0),
+    ("cfg_p0.2_w3.0", "./logs/kvue4el4-None/step=50000.ckpt", 3.0),
+    ("cfg_p0.2_w5.0", "./logs/kvue4el4-None/step=50000.ckpt", 5.0),
 ]
 
 DATASETS = [
