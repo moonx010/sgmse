@@ -24,9 +24,12 @@ class CLAPNoiseEncoder(nn.Module):
     generalized audio representations that should transfer better
     to unseen noise types compared to training from scratch.
 
+    NOTE: Currently only supports freeze_clap=True mode.
+    Fine-tuning CLAP requires different gradient handling and is not yet implemented.
+
     Args:
         embed_dim: Output embedding dimension (default: 512)
-        freeze_clap: Whether to freeze CLAP weights (default: True)
+        freeze_clap: Whether to freeze CLAP weights (must be True for now)
         clap_model: CLAP model variant (default: '630k-audioset-best')
     """
 
@@ -44,6 +47,13 @@ class CLAPNoiseEncoder(nn.Module):
                 "Install with: pip install laion-clap"
             )
 
+        if not freeze_clap:
+            raise NotImplementedError(
+                "CLAP fine-tuning is not yet supported. "
+                "Please use --freeze_clap flag. "
+                "Fine-tuning requires gradient-compatible CLAP forward pass."
+            )
+
         self.embed_dim = embed_dim
         self.freeze_clap = freeze_clap
 
@@ -54,11 +64,10 @@ class CLAPNoiseEncoder(nn.Module):
         # CLAP outputs 512-dim embeddings
         self.clap_dim = 512
 
-        # Freeze CLAP if specified
-        if freeze_clap:
-            for param in self.clap.parameters():
-                param.requires_grad = False
-            self.clap.eval()
+        # Always freeze CLAP for now
+        for param in self.clap.parameters():
+            param.requires_grad = False
+        self.clap.eval()
 
         # Projection layer to match desired embedding dimension
         if embed_dim != self.clap_dim:
