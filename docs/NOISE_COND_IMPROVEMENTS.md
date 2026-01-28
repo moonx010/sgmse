@@ -257,7 +257,7 @@ class ResBlockWithCrossAttention(nn.Module):
 
 | Rank | Task | Expected Impact | Difficulty | Status |
 |------|------|-----------------|------------|--------|
-| 1 | **CFG Implementation** | ⭐⭐⭐⭐⭐ | Low | 🔲 Not Started |
+| 1 | **CFG Implementation** | ⭐⭐⭐⭐⭐ | Low | 🔄 In Progress |
 | 2 | **CLAP Encoder** | ⭐⭐⭐⭐⭐ | Medium | 🔲 Not Started |
 | 3 | **Noise Augmentation** | ⭐⭐⭐ | Low | 🔲 Not Started |
 | 4 | **Cross-Attention** | ⭐⭐⭐ | High | 🔲 Not Started |
@@ -357,12 +357,30 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ### 5.1 Phase 1: CFG Results
 
+#### Experiment Rationale
+
+**Problem**: Noise encoder가 학습 시 본 노이즈(DEMAND)에만 의존하여, OOD 노이즈에서 conditioning이 오히려 성능을 저하시킬 수 있음.
+
+**Solution**: Classifier-Free Guidance (CFG)로 모델이 conditioning 없이도 동작하도록 학습. Inference 시 guidance scale로 conditioning 강도 조절.
+
+**Hypotheses**:
+
+| 실험 | 가설 | 검증 방법 |
+|------|------|----------|
+| **p_uncond=0.1** | 10% dropout으로 unconditional 능력 학습, conditional 성능 유지 | w=1.0에서 baseline과 유사, w>1에서 향상 |
+| **p_uncond=0.2** | 더 많은 dropout으로 더 강한 unconditional 능력 | OOD에서 더 안정적, 단 in-distribution 성능 저하 가능 |
+| **w (guidance scale)** | w>1로 conditioning 강조, w<1로 약화 | In-dist: w=1~3 최적, OOD: w 조절로 graceful degradation |
+
+**Expected Outcome**:
+- In-distribution: w=1.0에서 기존과 유사, w 증가 시 약간 향상 가능
+- OOD: w=1.0 (conditional only)보다 w<1.0이나 w>1.0 조절로 더 안정적인 성능
+
 #### Training Runs
 
 | Exp ID | p_uncond | batch_size | steps | wandb_name | Checkpoint | Status |
 |--------|----------|------------|-------|------------|------------|--------|
-| CFG-01 | 0.1 | 4 | 50k | nc-cfg-p0.1 | TBD | 🔲 |
-| CFG-02 | 0.2 | 4 | 50k | nc-cfg-p0.2 | TBD | 🔲 |
+| CFG-01 | 0.1 | 4 | 50k | nc-cfg-p0.1 | logs/e8f9ztov-None | 🔄 Eval |
+| CFG-02 | 0.2 | 4 | 50k | nc-cfg-p0.2 | logs/kvue4el4-None | 🔄 Eval |
 
 #### In-Distribution Results (VB-DEMAND Test)
 
@@ -390,6 +408,24 @@ class ResBlockWithCrossAttention(nn.Module):
 ---
 
 ### 5.2 Phase 2: CLAP Encoder Results
+
+#### Experiment Rationale
+
+**Problem**: 현재 NoiseEncoder는 DEMAND 노이즈만 학습하여 OOD 노이즈에 일반화가 어려움.
+
+**Solution**: Pre-trained CLAP (Contrastive Language-Audio Pretraining)은 대규모 오디오 데이터(AudioSet 등)로 학습되어 다양한 소리에 대한 일반화된 representation을 제공함.
+
+**Hypotheses**:
+
+| 실험 | 가설 | 검증 방법 |
+|------|------|----------|
+| **CLAP-frozen** | Pre-trained representation이 noise encoding에 충분히 유용하다 | Frozen CLAP + projection layer만으로 baseline 대비 OOD 성능 향상 |
+| **CLAP-finetune** | Task-specific fine-tuning이 추가 성능 향상을 가져온다 | Fine-tuned vs Frozen 비교. 단, overfitting 위험 모니터링 필요 |
+| **CLAP-CFG** | CLAP의 일반화 + CFG의 guidance가 시너지 효과를 낸다 | CLAP-frozen + CFG가 개별 적용보다 OOD에서 더 좋은 성능 |
+
+**Expected Outcome**:
+- In-distribution: Baseline과 유사하거나 약간 낮을 수 있음 (CLAP이 noise-specific하지 않으므로)
+- OOD: 유의미한 성능 향상 기대 (CLAP의 일반화 능력)
 
 #### Training Runs
 
@@ -454,10 +490,10 @@ class ResBlockWithCrossAttention(nn.Module):
 ### 6.1 Immediate (This Week)
 
 1. **CFG Implementation**
-   - [ ] Add `cond_drop_prob` to `NoiseCondScoreModel`
-   - [ ] Modify training loop for conditional dropout
-   - [ ] Add guidance scale to enhancement script
-   - [ ] Run CFG experiments
+   - [x] Add `cond_drop_prob` to `NoiseCondScoreModel` (already in model_cond.py)
+   - [x] Modify training loop for conditional dropout (already implemented)
+   - [x] Add guidance scale to enhancement script (--cfg_scale in enhancement_noise_cond.py)
+   - [ ] Run CFG experiments (🔄 Training in progress: p_uncond=0.1, 0.2)
 
 ### 6.2 Short-term (Next 2 Weeks)
 
