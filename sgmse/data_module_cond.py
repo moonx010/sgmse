@@ -25,6 +25,8 @@ class NoiseCondSpecs(Dataset):
     1. Computing oracle noise: n = y - x (in waveform domain)
     2. Random cropping a segment of specified length
     3. Converting to STFT spectrogram
+
+    Optionally returns raw waveform for CLAP encoder.
     """
 
     def __init__(
@@ -39,6 +41,7 @@ class NoiseCondSpecs(Dataset):
         normalize="noisy",
         spec_transform=None,
         stft_kwargs=None,
+        return_ref_waveform=False,  # For CLAP encoder
         **ignored_kwargs
     ):
         # Read file paths according to file naming format.
@@ -65,6 +68,7 @@ class NoiseCondSpecs(Dataset):
         self.shuffle_spec = shuffle_spec
         self.normalize = normalize
         self.spec_transform = spec_transform
+        self.return_ref_waveform = return_ref_waveform
 
         assert all(k in stft_kwargs.keys() for k in ["n_fft", "hop_length", "center", "window"]), \
             "misconfigured STFT kwargs"
@@ -129,6 +133,9 @@ class NoiseCondSpecs(Dataset):
         # Apply spectrogram transform
         X, Y, R = self.spec_transform(X), self.spec_transform(Y), self.spec_transform(R)
 
+        if self.return_ref_waveform:
+            # Return raw waveform for CLAP encoder
+            return X, Y, R, r.squeeze(0)  # r: [T]
         return X, Y, R
 
     def __len__(self):
@@ -152,6 +159,8 @@ class NoiseCondSpecsDataModule(SpecsDataModule):
                             help="Number of STFT frames for noise reference. 32 (~0.5s) by default.")
         parser.add_argument("--ref_length_sec", type=float, default=None,
                             help="Alternative: specify reference length in seconds (overrides ref_num_frames)")
+        parser.add_argument("--return_ref_waveform", action='store_true',
+                            help="Return raw waveform for noise reference (for CLAP encoder)")
         return parser
 
     def __init__(
@@ -172,6 +181,7 @@ class NoiseCondSpecsDataModule(SpecsDataModule):
         transform_type="exponent",
         ref_num_frames=32,
         ref_length_sec=None,
+        return_ref_waveform=False,
         **kwargs
     ):
         super().__init__(
@@ -200,6 +210,7 @@ class NoiseCondSpecsDataModule(SpecsDataModule):
             ref_num_frames = int(ref_length_sec * sample_rate / hop_length) + 1
 
         self.ref_num_frames = ref_num_frames
+        self.return_ref_waveform = return_ref_waveform
 
     def setup(self, stage=None):
         specs_kwargs = dict(
@@ -207,6 +218,7 @@ class NoiseCondSpecsDataModule(SpecsDataModule):
             num_frames=self.num_frames,
             ref_num_frames=self.ref_num_frames,
             spec_transform=self.spec_fwd,
+            return_ref_waveform=self.return_ref_waveform,
             **self.kwargs
         )
         if stage == 'fit' or stage is None:

@@ -1,5 +1,6 @@
 gdown
-h5py 
+h5py
+laion-clap  # Optional: for CLAP noise encoder
 ipympl 
 librosa 
 ninja 

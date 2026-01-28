@@ -20,6 +20,11 @@ from sgmse import sampling
 from sgmse.sdes import SDERegistry
 from sgmse.backbones import BackboneRegistry
 from sgmse.noise_encoder import NoiseEncoder, NoiseEncoderLight
+try:
+    from sgmse.clap_encoder import CLAPNoiseEncoder, CLAPNoiseEncoderSimple
+    CLAP_AVAILABLE = True
+except ImportError:
+    CLAP_AVAILABLE = False
 from sgmse.util.inference import evaluate_model
 from sgmse.util.other import pad_spec, si_sdr
 from pesq import pesq
@@ -55,7 +60,7 @@ class NoiseCondScoreModel(pl.LightningModule):
                             help="The sample rate of the audio files.")
         # Noise encoder arguments
         parser.add_argument("--noise_encoder_type", type=str, default="default",
-                            choices=["default", "light"],
+                            choices=["default", "light", "clap", "clap_simple"],
                             help="Type of noise encoder to use.")
         parser.add_argument("--noise_embed_dim", type=int, default=512,
                             help="Dimension of noise embedding.")
@@ -63,6 +68,8 @@ class NoiseCondScoreModel(pl.LightningModule):
                             help="Base number of filters in noise encoder.")
         parser.add_argument("--train_noise_encoder", type=bool, default=True,
                             help="Whether to train the noise encoder jointly.")
+        parser.add_argument("--freeze_clap", action='store_true',
+                            help="Freeze CLAP weights (only train projection layer)")
         # Classifier-free guidance
         parser.add_argument("--cond_drop_prob", type=float, default=0.0,
                             help="Probability of dropping noise conditioning during training (for CFG).")
@@ -84,6 +91,7 @@ class NoiseCondScoreModel(pl.LightningModule):
         noise_encoder_nf=64,
         train_noise_encoder=True,
         cond_drop_prob=0.0,
+        freeze_clap=True,
         data_module_cls=None,
         **kwargs
     ):
@@ -96,6 +104,8 @@ class NoiseCondScoreModel(pl.LightningModule):
 
         # Initialize Noise Encoder
         self.noise_encoder_type = noise_encoder_type
+        self.use_clap = noise_encoder_type in ['clap', 'clap_simple']
+
         if noise_encoder_type == 'default':
             self.noise_encoder = NoiseEncoder(
                 in_channels=2,
@@ -105,6 +115,20 @@ class NoiseCondScoreModel(pl.LightningModule):
         elif noise_encoder_type == 'light':
             self.noise_encoder = NoiseEncoderLight(
                 embed_dim=noise_embed_dim,
+            )
+        elif noise_encoder_type == 'clap':
+            if not CLAP_AVAILABLE:
+                raise ImportError("CLAP encoder requires laion-clap. Install with: pip install laion-clap")
+            self.noise_encoder = CLAPNoiseEncoder(
+                embed_dim=noise_embed_dim,
+                freeze_clap=freeze_clap,
+            )
+        elif noise_encoder_type == 'clap_simple':
+            if not CLAP_AVAILABLE:
+                raise ImportError("CLAP encoder requires laion-clap. Install with: pip install laion-clap")
+            self.noise_encoder = CLAPNoiseEncoderSimple(
+                embed_dim=noise_embed_dim,
+                freeze_clap=freeze_clap,
             )
 
         self.train_noise_encoder = train_noise_encoder
@@ -196,10 +220,18 @@ class NoiseCondScoreModel(pl.LightningModule):
         Training/validation step.
 
         Args:
-            batch: (x, y, r) tuple of clean, noisy, and reference spectrograms
+            batch: (x, y, r) or (x, y, r_spec, r_wav) tuple
+                   - Standard: clean, noisy, and reference spectrograms
+                   - CLAP: includes raw waveform for noise reference
             batch_idx: Batch index
         """
-        x, y, r = batch
+        if len(batch) == 4:
+            # CLAP mode: (x, y, r_spec, r_wav)
+            x, y, r_spec, r_wav = batch
+            r = r_wav if self.use_clap else r_spec
+        else:
+            # Standard mode: (x, y, r)
+            x, y, r = batch
 
         # Encode noise reference
         z_r = self.noise_encoder(r)  # [B, embed_dim]
@@ -426,8 +458,14 @@ class NoiseCondScoreModel(pl.LightningModule):
             if noise_ref.dim() == 1:
                 noise_ref = noise_ref.unsqueeze(0)
             noise_ref = noise_ref / norm_factor
-            R = torch.unsqueeze(self._forward_transform(self._stft(noise_ref.cuda())), 0)
-            z_r = self.noise_encoder(R)
+
+            if self.use_clap:
+                # CLAP encoder expects raw waveform
+                z_r = self.noise_encoder(noise_ref.cuda())
+            else:
+                # Standard encoder expects spectrogram
+                R = torch.unsqueeze(self._forward_transform(self._stft(noise_ref.cuda())), 0)
+                z_r = self.noise_encoder(R)
         else:
             # Use zero embedding if no reference provided
             z_r = torch.zeros(1, self.noise_embed_dim, device=Y.device)
