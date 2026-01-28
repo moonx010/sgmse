@@ -431,12 +431,12 @@ Test set: VoiceBank clean + ESC-50 noise (`vb_esc50`)
 - VoiceBank-DEMAND dataset
 - WandB logging enabled
 
-| Experiment ID | ref_length_sec | ref_num_frames | wandb_name | Status |
-|---------------|----------------|----------------|------------|--------|
-| NC-ref025 | 0.25s | 32 | nc-ref-0.25s | Pending |
-| NC-ref05 | 0.5s | 63 | nc-ref-0.5s | Pending |
-| NC-ref1 | 1.0s | 126 | nc-ref-1.0s | Pending |
-| NC-ref2 | 2.0s | 251 | nc-ref-2.0s | Pending |
+| Experiment ID | ref_length_sec | ref_num_frames | wandb_name | Checkpoint | Status |
+|---------------|----------------|----------------|------------|------------|--------|
+| NC-ref025 | 0.25s | 32 | nc-ref-0.25s | logs/zqtm721z-nc-ref-0.25s/step=50000.ckpt | ✅ Done |
+| NC-ref05 | 0.5s | 63 | nc-ref-0.5s | logs/7tucs4jy-nc-ref-0.5s/step=50000.ckpt | ✅ Done |
+| NC-ref1 | 1.0s | 126 | nc-ref-1.0s | logs/sr8toljy-nc-ref-1.0s/step=50000.ckpt | ✅ Done |
+| NC-ref2 | 2.0s | 251 | nc-ref-2.0s | logs/5xbd359r-nc-ref-2.0s/step=50000.ckpt | ✅ Done |
 
 **Frame calculation** (16kHz, hop_length=128):
 ```
@@ -460,21 +460,27 @@ CUDA_VISIBLE_DEVICES=5 python train_noise_cond.py --base_dir ./data/voicebank-de
 
 **Results (VB-DEMAND Test Set)**:
 
-| ref_length | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ | Checkpoint |
-|------------|--------|---------|----------|------------|
-| 0.25s | TBD | TBD | TBD | TBD |
-| 0.5s | TBD | TBD | TBD | TBD |
-| 1.0s | TBD | TBD | TBD | TBD |
-| 2.0s | TBD | TBD | TBD | TBD |
+| ref_length | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|------------|--------|---------|----------|
+| 0.25s | **1.59 ± 0.42** | **0.71 ± 0.18** | **10.9 ± 4.6** |
+| 0.5s | 1.06 ± 0.03 | 0.43 ± 0.11 | 0.7 ± 2.1 |
+| 1.0s | 1.24 ± 0.15 | 0.64 ± 0.15 | 9.2 ± 3.4 |
+| 2.0s | 1.06 ± 0.03 | 0.48 ± 0.11 | 2.2 ± 2.2 |
 
-**Results (OOD - ESC-50 Noise)**:
+**Results (OOD - ESC-50 Noise, SNR 0dB)**:
 
-| ref_length | SNR | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
-|------------|-----|--------|---------|----------|
-| 0.25s | 0dB | TBD | TBD | TBD |
-| 0.5s | 0dB | TBD | TBD | TBD |
-| 1.0s | 0dB | TBD | TBD | TBD |
-| 2.0s | 0dB | TBD | TBD | TBD |
+| ref_length | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|------------|--------|---------|----------|
+| 0.25s | **1.12 ± 0.17** | **0.42 ± 0.23** | **-1.4 ± 3.4** |
+| 0.5s | 1.04 ± 0.02 | 0.25 ± 0.11 | -5.8 ± 3.7 |
+| 1.0s | 1.07 ± 0.06 | 0.38 ± 0.18 | -1.7 ± 3.7 |
+| 2.0s | 1.04 ± 0.02 | 0.29 ± 0.11 | -4.8 ± 3.5 |
+
+**Observations**:
+- **0.25s reference performs best** on both in-distribution and OOD tests
+- 0.5s and 2.0s references show poor performance (near PESQ 1.0)
+- Results are counterintuitive - longer reference does NOT improve performance
+- Possible issues: training instability, overfitting, or embedding capacity problems with longer references
 
 ---
 
@@ -482,11 +488,19 @@ CUDA_VISIBLE_DEVICES=5 python train_noise_cond.py --base_dir ./data/voicebank-de
 
 1. **In-distribution performance**: Noise conditioning does not improve performance on noise types seen during training (DEMAND). The baseline model already captures these noise patterns.
 
-2. **OOD generalization**: TBD - This is the key hypothesis to verify. Noise-cond should help on unseen noise types.
+2. **OOD generalization**: Performance degrades significantly on ESC-50 noise (OOD). All models show negative SI-SDR, indicating the enhanced signal is worse than input in terms of distortion.
 
 3. **Training efficiency**: Both models trained for similar number of epochs/steps for fair comparison.
 
-4. **Reference length effect**: TBD - Ablation study in progress.
+4. **Reference length effect (Ablation Study)**:
+   - **Surprising result**: Shorter reference (0.25s) performs best
+   - 0.5s and 2.0s show near-random performance (PESQ ~1.0)
+   - 1.0s shows moderate performance
+   - **Hypothesis**: Longer references may cause:
+     - Training instability due to larger input variance
+     - Encoder overfitting to noise-specific patterns
+     - Difficulty in learning compressed representations
+   - **Action needed**: Investigate training curves on WandB, check for convergence issues
 
 ---
 
