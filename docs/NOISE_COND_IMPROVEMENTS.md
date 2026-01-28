@@ -415,6 +415,32 @@ class ResBlockWithCrossAttention(nn.Module):
 
 **Solution**: Pre-trained CLAP (Contrastive Language-Audio Pretraining)은 대규모 오디오 데이터(AudioSet 등)로 학습되어 다양한 소리에 대한 일반화된 representation을 제공함.
 
+#### Why LAION-CLAP?
+
+**Encoder 후보군 비교:**
+
+| Encoder | 학습 데이터 | 특징 | 선택 이유 |
+|---------|------------|------|----------|
+| **LAION-CLAP** ✓ | AudioSet (5M clips), LAION-Audio-630K | Contrastive audio-text learning | 범용 오디오 이해, 환경음/노이즈에 강함 |
+| PANNs | AudioSet (2M clips) | Audio tagging 목적 | 대안으로 고려 가능 |
+| BEATs | AudioSet | Self-supervised, SOTA audio classification | 복잡한 구조, 무거움 |
+| wav2vec 2.0 | LibriSpeech | Speech-focused SSL | 음성 특화, 노이즈 부적합 |
+| HuBERT | LibriSpeech | Speech-focused SSL | 음성 특화, 노이즈 부적합 |
+| AudioMAE | AudioSet | Masked autoencoder | 최신이나 구현 복잡 |
+
+**LAION-CLAP 선택 근거:**
+
+1. **학습 데이터 다양성**: AudioSet + LAION-Audio-630K로 환경음, 음악, 음성 등 다양한 소리 포함
+2. **Contrastive Learning**: Audio-text pair로 학습하여 의미론적 오디오 이해 가능
+3. **Embedding 차원**: 512차원으로 현재 아키텍처와 일치
+4. **오픈소스 & 접근성**: `pip install laion-clap`으로 쉽게 사용 가능
+5. **검증된 성능**: AudioLDM, Make-An-Audio 등 생성 모델에서 검증됨
+6. **노이즈 적합성**: wav2vec/HuBERT는 음성 특화라 환경 노이즈 인코딩에 부적합
+
+**향후 비교 실험 (Optional)**:
+- PANNs와 비교 실험 가능 (audio tagging 특화)
+- 성능 차이 없으면 더 가벼운 모델 선택
+
 **Hypotheses**:
 
 | 실험 | 가설 | 검증 방법 |
