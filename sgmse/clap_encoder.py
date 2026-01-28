@@ -128,16 +128,19 @@ class CLAPNoiseEncoder(nn.Module):
         # Normalize audio to [-1, 1] range
         audio = audio / (audio.abs().max(dim=-1, keepdim=True)[0] + 1e-8)
 
-        # CLAP's get_audio_embedding_from_data expects numpy array
+        # CLAP's get_audio_embedding_from_data expects numpy array when use_tensor=False
         audio_np = audio.cpu().numpy()
 
-        # Get embeddings
-        embed = self.clap.get_audio_embedding_from_data(
+        # Get embeddings (use_tensor=False returns numpy, then convert)
+        embed_np = self.clap.get_audio_embedding_from_data(
             x=audio_np,
-            use_tensor=True
+            use_tensor=False
         )
 
-        return embed.to(device)
+        # Convert to tensor
+        embed = torch.from_numpy(embed_np).to(device)
+
+        return embed
 
 
 class CLAPNoiseEncoderSimple(nn.Module):
