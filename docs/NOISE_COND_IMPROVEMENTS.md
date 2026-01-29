@@ -379,31 +379,50 @@ class ResBlockWithCrossAttention(nn.Module):
 
 | Exp ID | p_uncond | batch_size | steps | wandb_name | Checkpoint | Status |
 |--------|----------|------------|-------|------------|------------|--------|
-| CFG-01 | 0.1 | 4 | 50k | nc-cfg-p0.1 | logs/e8f9ztov-None | 🔄 Eval |
-| CFG-02 | 0.2 | 4 | 50k | nc-cfg-p0.2 | logs/kvue4el4-None | 🔄 Eval |
+| CFG-01 | 0.1 | 4 | 50k | nc-cfg-p0.1 | logs/e8f9ztov-None | ✅ Done |
+| CFG-02 | 0.2 | 4 | 50k | nc-cfg-p0.2 | logs/kvue4el4-None | ✅ Done |
 
 #### In-Distribution Results (VB-DEMAND Test)
 
 | Exp ID | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
 |--------|---|--------|---------|----------|
-| CFG-01 | 1.0 | TBD | TBD | TBD |
-| CFG-01 | 3.0 | TBD | TBD | TBD |
-| CFG-01 | 5.0 | TBD | TBD | TBD |
-| CFG-02 | 1.0 | TBD | TBD | TBD |
-| CFG-02 | 3.0 | TBD | TBD | TBD |
-| CFG-02 | 5.0 | TBD | TBD | TBD |
+| CFG-01 (p=0.1) | 1.0 | 1.40 | 0.69 | 10.3 |
+| CFG-01 (p=0.1) | 3.0 | 1.39 | 0.68 | 10.4 |
+| CFG-01 (p=0.1) | 5.0 | 1.37 | 0.67 | 10.4 |
+| **CFG-02 (p=0.2)** | **1.0** | **1.86** | **0.77** | **12.3** |
+| CFG-02 (p=0.2) | 3.0 | 1.87 | 0.76 | 12.3 |
+| CFG-02 (p=0.2) | 5.0 | 1.87 | 0.75 | 12.3 |
 
 #### OOD Results (ESC-50 Noise, SNR 0dB)
 
 | Exp ID | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
 |--------|---|--------|---------|----------|
-| Baseline (no CFG) | - | TBD | TBD | TBD |
-| CFG-01 | 1.0 | TBD | TBD | TBD |
-| CFG-01 | 3.0 | TBD | TBD | TBD |
-| CFG-01 | 5.0 | TBD | TBD | TBD |
-| CFG-02 | 1.0 | TBD | TBD | TBD |
-| CFG-02 | 3.0 | TBD | TBD | TBD |
-| CFG-02 | 5.0 | TBD | TBD | TBD |
+| Baseline (nc_ref0.25s) | - | 1.12 | 0.42 | -1.4 |
+| CFG-01 (p=0.1) | 1.0 | 1.12 | 0.45 | -0.5 |
+| CFG-01 (p=0.1) | 3.0 | 1.12 | 0.42 | -0.9 |
+| CFG-01 (p=0.1) | 5.0 | 1.12 | 0.35 | -2.4 |
+| **CFG-02 (p=0.2)** | **1.0** | **1.18** | **0.51** | **0.8** |
+| CFG-02 (p=0.2) | 3.0 | 1.18 | 0.47 | 0.4 |
+| CFG-02 (p=0.2) | 5.0 | 1.19 | 0.44 | 0.2 |
+
+#### Analysis
+
+**Key Findings:**
+
+1. **p_uncond=0.2가 p_uncond=0.1보다 일관되게 우수**
+   - In-dist: PESQ 1.86 vs 1.40 (+0.46)
+   - OOD: PESQ 1.18 vs 1.12, SI-SDR 0.8 vs -0.5
+
+2. **Guidance scale (w) 효과 미미**
+   - w=1.0, 3.0, 5.0 간 성능 차이 거의 없음
+   - 예상과 달리 w 증가가 성능 향상으로 이어지지 않음
+
+3. **OOD 일반화 개선 확인**
+   - CFG-02 (p=0.2, w=1.0)이 baseline 대비 OOD에서 개선
+   - SI-SDR: -1.4 → 0.8 (+2.2 dB)
+   - ESTOI: 0.42 → 0.51 (+0.09)
+
+**Conclusion:** CFG with p_uncond=0.2가 가장 효과적. Guidance scale 조정보다 dropout 비율이 더 중요.
 
 ---
 
