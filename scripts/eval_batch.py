@@ -98,22 +98,44 @@ def run_metrics(exp_name, cfg_scale, dataset_suffix, clean_dir, noisy_dir):
         "cfg_scale": cfg_scale,
     }
 
-    # Parse PESQ, ESTOI, SI-SDR from stdout
+    # Parse PESQ, ESTOI, SI-SDR with std from stdout
+    # Format: "PESQ: 1.59 ± 0.42"
     for line in result.stdout.split("\n"):
         if "PESQ:" in line:
-            match = re.search(r"PESQ:\s*([\d.]+)", line)
+            match = re.search(r"PESQ:\s*([\d.]+)\s*±\s*([\d.]+)", line)
             if match:
                 metrics["PESQ"] = float(match.group(1))
+                metrics["PESQ_std"] = float(match.group(2))
         elif "ESTOI:" in line:
-            match = re.search(r"ESTOI:\s*([\d.]+)", line)
+            match = re.search(r"ESTOI:\s*([\d.]+)\s*±\s*([\d.]+)", line)
             if match:
                 metrics["ESTOI"] = float(match.group(1))
+                metrics["ESTOI_std"] = float(match.group(2))
         elif "SI-SDR:" in line:
-            match = re.search(r"SI-SDR:\s*([\d.-]+)", line)
+            match = re.search(r"SI-SDR:\s*([\d.-]+)\s*±\s*([\d.]+)", line)
             if match:
                 metrics["SI-SDR"] = float(match.group(1))
+                metrics["SI-SDR_std"] = float(match.group(2))
 
     return metrics
+
+
+def format_metric(r, key):
+    """Format metric with ± std if available."""
+    val = r.get(key)
+    std = r.get(f"{key}_std")
+    if val is None:
+        return "-"
+    if std is not None:
+        if key == "SI-SDR":
+            return f"{val:.1f} ± {std:.1f}"
+        else:
+            return f"{val:.2f} ± {std:.2f}"
+    else:
+        if key == "SI-SDR":
+            return f"{val:.1f}"
+        else:
+            return f"{val:.2f}"
 
 
 def save_results(all_results, output_path):
@@ -123,7 +145,7 @@ def save_results(all_results, output_path):
     # Save as CSV
     csv_path = output_path + ".csv"
     with open(csv_path, "w") as f:
-        headers = ["experiment", "dataset", "cfg_scale", "PESQ", "ESTOI", "SI-SDR"]
+        headers = ["experiment", "dataset", "cfg_scale", "PESQ", "PESQ_std", "ESTOI", "ESTOI_std", "SI-SDR", "SI-SDR_std"]
         f.write(",".join(headers) + "\n")
         for r in all_results:
             row = [str(r.get(h, "")) for h in headers]
@@ -142,7 +164,7 @@ def save_results(all_results, output_path):
         f.write("|------------|-----------|--------|---------|----------|\n")
         for r in all_results:
             if r["dataset"] == "VB-DEMAND":
-                f.write(f"| {r['experiment']} | {r['cfg_scale']} | {r.get('PESQ', '-'):.2f} | {r.get('ESTOI', '-'):.2f} | {r.get('SI-SDR', '-'):.1f} |\n")
+                f.write(f"| {r['experiment']} | {r['cfg_scale']} | {format_metric(r, 'PESQ')} | {format_metric(r, 'ESTOI')} | {format_metric(r, 'SI-SDR')} |\n")
 
         # OOD results
         f.write("\n## Out-of-Distribution (ESC-50 Noise, SNR 0dB)\n\n")
@@ -150,7 +172,7 @@ def save_results(all_results, output_path):
         f.write("|------------|-----------|--------|---------|----------|\n")
         for r in all_results:
             if r["dataset"] != "VB-DEMAND":
-                f.write(f"| {r['experiment']} | {r['cfg_scale']} | {r.get('PESQ', '-'):.2f} | {r.get('ESTOI', '-'):.2f} | {r.get('SI-SDR', '-'):.1f} |\n")
+                f.write(f"| {r['experiment']} | {r['cfg_scale']} | {format_metric(r, 'PESQ')} | {format_metric(r, 'ESTOI')} | {format_metric(r, 'SI-SDR')} |\n")
 
     print(f"Results saved to: {md_path}")
 
