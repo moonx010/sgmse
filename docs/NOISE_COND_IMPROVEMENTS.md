@@ -259,8 +259,9 @@ class ResBlockWithCrossAttention(nn.Module):
 |------|------|-----------------|------------|--------|
 | 1 | **CFG Implementation** | ⭐⭐⭐⭐⭐ | Low | ✅ Completed |
 | 2 | **CLAP Encoder** | ⭐⭐⭐⭐⭐ | Medium | ✅ Completed |
-| 3 | **Noise Augmentation** | ⭐⭐⭐ | Low | 🔲 Not Started |
-| 4 | **Cross-Attention** | ⭐⭐⭐ | High | 🔲 Not Started |
+| 3 | **Scaled-up Training** | ⭐⭐⭐⭐⭐ | Low | 🔲 Not Started |
+| 4 | **Noise Augmentation** | ⭐⭐⭐ | Low | 🔲 Not Started |
+| 5 | **Cross-Attention** | ⭐⭐⭐ | High | 🔲 Not Started |
 
 **Legend**: 🔲 Not Started | 🔄 In Progress | ✅ Completed | ❌ Abandoned
 
@@ -550,18 +551,132 @@ class ResBlockWithCrossAttention(nn.Module):
 
 ### 5.4 Comparison Summary
 
+#### PoC Results (50k steps, batch=4, 1 GPU)
+
 | Method | VB-DEMAND PESQ | OOD PESQ | OOD SI-SDR | Notes |
 |--------|----------------|----------|------------|-------|
 | Baseline (nc_ref0.25s) | 1.59 ± 0.42 | 1.12 ± 0.17 | -1.4 ± 3.4 | From-scratch encoder |
-| **CFG (p=0.2, w=1.0)** | **1.86 ± 0.54** | **1.18 ± 0.25** | **0.8 ± 2.0** | Best overall |
+| **CFG (p=0.2, w=1.0)** | **1.86 ± 0.54** | **1.18 ± 0.25** | **0.8 ± 2.0** | Best overall (PoC) |
 | CLAP-frozen | 1.70 ± 0.48 | 1.13 ± 0.21 | -0.5 ± 3.2 | Pre-trained encoder |
 | CLAP-CFG (w=1.0) | 1.83 ± 0.54 | 1.18 ± 0.24 | 0.1 ± 2.1 | CLAP + CFG (p=0.1) |
-| + Cross-Attn | TBD | TBD | TBD | Phase 3 |
+
+#### Scaled Results (200k steps, batch=8×4, 4 GPUs) - Pending
+
+| Method | VB-DEMAND PESQ | OOD PESQ | OOD SI-SDR | Notes |
+|--------|----------------|----------|------------|-------|
+| CFG scaled (p=0.2) | TBD | TBD | TBD | Phase 5 |
+| CLAP-CFG scaled | TBD | TBD | TBD | Phase 5 |
+| SGMSE+ Baseline | TBD | TBD | TBD | No conditioning |
+| SGMSE+ Paper [2] | 2.93 | - | 17.3 | Reference |
 
 **Key Insights:**
 - CFG (p=0.2)가 현재까지 최고 성능
 - CLAP-CFG는 p_uncond=0.1로 학습됨 → p_uncond=0.2로 재학습 시 추가 향상 기대
 - OOD SI-SDR에서 CFG > CLAP-CFG > CLAP-frozen > Baseline 순
+
+---
+
+### 5.5 Phase 5: Scaled-up Training (Paper-level Comparison)
+
+#### Experiment Rationale
+
+**Problem**: 현재까지의 실험들은 50k steps, batch_size=4 (single GPU)로 진행됨. 논문에서 보고된 SGMSE+ 성능과 직접 비교하려면 동일한 학습 조건이 필요함.
+
+**Solution**: 4 GPU를 활용하여 논문 수준의 학습 진행:
+- Effective batch size 증가 (4 → 32)
+- 학습 steps 증가 (50k → 200k)
+- 원본 SGMSE+ 체크포인트와 동일 조건 비교
+
+**Hypotheses**:
+
+| 실험 | 가설 | 검증 방법 |
+|------|------|----------|
+| **Steps 증가 (50k→200k)** | 더 긴 학습이 수렴 및 성능 향상 | 50k vs 200k 동일 조건 비교 |
+| **Batch size 증가** | Larger batch로 안정적인 gradient estimation | Single GPU vs 4 GPU DDP 비교 |
+| **CFG + Scale-up** | CFG의 이점이 scale-up에서도 유지됨 | Scaled CFG vs Scaled baseline |
+
+**Expected Outcome**:
+- 50k → 200k: PESQ +0.1~0.2 향상 예상
+- Batch size 증가: 학습 안정성 향상, 성능 유사하거나 소폭 향상
+- 원본 SGMSE+ (no conditioning) 대비 noise-cond + CFG 우위 확인
+
+#### Training Configuration Comparison
+
+| Setting | PoC (현재) | Paper-level | 비고 |
+|---------|----------|-------------|------|
+| GPUs | 1 | 4 | DDP strategy |
+| Batch size/GPU | 4 | 8 | 메모리 허용 시 |
+| Effective batch | 4 | 32 | 8×4 GPUs |
+| Steps | 50k | 200k | 4배 증가 |
+| Learning rate | 1e-4 | 1e-4 | 동일 유지 |
+| EMA decay | 0.999 | 0.999 | 동일 유지 |
+
+#### Training Runs
+
+| Exp ID | Method | GPUs | batch/GPU | Steps | wandb_name | Status |
+|--------|--------|------|-----------|-------|------------|--------|
+| SCALE-01 | CFG (p=0.2) | 4 | 8 | 200k | nc-cfg-scaled | 🔲 |
+| SCALE-02 | CLAP-CFG (p=0.2) | 4 | 8 | 200k | nc-clap-cfg-scaled | 🔲 |
+| SCALE-03 | Baseline (no cond)* | 4 | 8 | 200k | sgmse-baseline | 🔲 |
+
+*SCALE-03: 원본 SGMSE+ 학습 또는 pretrained checkpoint 사용
+
+#### Training Commands
+
+**SCALE-01: CFG (p=0.2) Scaled**
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train_noise_cond.py \
+    --base_dir ./data/voicebank-demand \
+    --backbone ncsnpp_v2_cond \
+    --batch_size 8 \
+    --devices 4 \
+    --max_steps 200000 \
+    --cond_drop_prob 0.2 \
+    --wandb_name nc-cfg-scaled \
+    --save_ckpt_interval 50000
+```
+
+**SCALE-02: CLAP-CFG (p=0.2) Scaled**
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train_noise_cond.py \
+    --base_dir ./data/voicebank-demand \
+    --backbone ncsnpp_v2_cond \
+    --batch_size 8 \
+    --devices 4 \
+    --max_steps 200000 \
+    --noise_encoder_type clap \
+    --freeze_clap \
+    --return_ref_waveform \
+    --cond_drop_prob 0.2 \
+    --wandb_name nc-clap-cfg-scaled \
+    --save_ckpt_interval 50000
+```
+
+#### Evaluation Plan
+
+**In-Distribution (VB-DEMAND Test)**:
+| Exp ID | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|--------|---------|----------|
+| SCALE-01 (CFG scaled) | TBD | TBD | TBD |
+| SCALE-02 (CLAP-CFG scaled) | TBD | TBD | TBD |
+| SCALE-03 (Baseline) | TBD | TBD | TBD |
+
+**OOD (ESC-50 Noise, SNR 0dB)**:
+| Exp ID | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|--------|---------|----------|
+| SCALE-01 (CFG scaled) | TBD | TBD | TBD |
+| SCALE-02 (CLAP-CFG scaled) | TBD | TBD | TBD |
+| SCALE-03 (Baseline) | TBD | TBD | TBD |
+
+**Reference (SGMSE+ Paper [2] VB-DEMAND)**:
+| Method | PESQ | ESTOI | SI-SDR |
+|--------|------|-------|--------|
+| SGMSE+ (reported) | 2.93 | 0.87 | 17.3 |
+
+**Success Criteria**:
+1. SCALE-01/02가 50k 실험 대비 성능 향상
+2. Noise-conditioned model이 baseline (SCALE-03) 대비 OOD에서 우수
+3. In-distribution에서 SGMSE+ paper 성능에 근접 (PESQ > 2.5 목표)
 
 ---
 
