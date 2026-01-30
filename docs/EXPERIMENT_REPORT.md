@@ -39,7 +39,8 @@
 | **CFG-0.1** | CNN (from scratch) | 0.1 | 10% conditioning dropout |
 | **CFG-0.2** | CNN (from scratch) | 0.2 | 20% conditioning dropout |
 | **CLAP-frozen** | CLAP (frozen) | - | Pre-trained audio encoder |
-| **CLAP-CFG** | CLAP (frozen) | 0.1 | CLAP + CFG |
+| **CLAP-CFG-0.1** | CLAP (frozen) | 0.1 | CLAP + CFG (10% dropout) |
+| **CLAP-CFG-0.2** | CLAP (frozen) | 0.2 | CLAP + CFG (20% dropout) - *Training* |
 
 ### 2.4 Training Details
 
@@ -62,12 +63,13 @@
 | CFG (p=0.1) | 1.40 ± 0.26 | 0.69 ± 0.15 | 10.3 ± 4.2 |
 | **CFG (p=0.2)** | **1.86 ± 0.54** | **0.77 ± 0.15** | **12.3 ± 4.6** |
 | CLAP-frozen | 1.70 ± 0.48 | 0.74 ± 0.17 | 11.5 ± 4.5 |
-| CLAP-CFG | 1.83 ± 0.54 | 0.75 ± 0.17 | 12.1 ± 4.6 |
+| **CLAP-CFG (p=0.1)** | **1.83 ± 0.54** | **0.75 ± 0.17** | **12.1 ± 4.6** |
+| CLAP-CFG (p=0.2) | 1.30 ± 0.21 | 0.64 ± 0.16 | 9.1 ± 4.0 |
 
 **Key Findings (Contribution 1)**:
 - CFG (p=0.2)가 baseline 대비 **PESQ +0.27**, **SI-SDR +2.2 dB** 향상
-- 적절한 conditioning dropout (p=0.2)이 모델의 conditional/unconditional 능력 균형에 중요
-- CLAP pre-trained encoder도 in-distribution에서 competitive한 성능
+- **CNN vs CLAP에서 optimal p_uncond가 다름**: CNN은 p=0.2, CLAP은 p=0.1이 최적
+- CLAP-CFG (p=0.2)는 오히려 성능 저하 → CLAP embedding이 더 민감하여 높은 dropout에 취약
 
 ### 3.2 Out-of-Distribution Performance (ESC-50 Noise, SNR 0dB)
 
@@ -77,25 +79,31 @@
 | CFG (p=0.1) | 1.12 ± 0.13 | 0.45 ± 0.21 | -0.5 ± 2.1 |
 | **CFG (p=0.2)** | **1.18 ± 0.25** | **0.51 ± 0.21** | **0.8 ± 2.0** |
 | CLAP-frozen | 1.13 ± 0.21 | 0.46 ± 0.20 | -0.5 ± 3.2 |
-| CLAP-CFG | 1.18 ± 0.24 | 0.50 ± 0.23 | 0.1 ± 2.1 |
+| CLAP-CFG (p=0.1) | 1.18 ± 0.24 | 0.50 ± 0.23 | 0.1 ± 2.1 |
+| CLAP-CFG (p=0.2) | 1.09 ± 0.09 | 0.37 ± 0.17 | -2.2 ± 4.8 |
 
 **Key Findings (Contribution 2)**:
-- CFG (p=0.2)가 OOD에서 baseline 대비 **SI-SDR +2.2 dB** 향상 (-1.4 → 0.8)
-- ESTOI도 0.42 → 0.51로 **+0.09** 개선
-- Noise reference guidance가 unseen noise에 대한 일반화 능력 향상에 기여
+- **CFG (p=0.2)가 OOD에서 최고 성능**: SI-SDR 0.8 dB
+- CLAP-CFG (p=0.1)도 competitive: SI-SDR 0.1 dB
+- CLAP-CFG (p=0.2)는 OOD에서도 크게 저하 (-2.2 dB) → p=0.2가 CLAP에는 부적합
 
 ### 3.3 Guidance Scale (w) Analysis
 
 | Model | w | In-dist PESQ | OOD PESQ | OOD SI-SDR |
 |-------|---|--------------|----------|------------|
-| CFG (p=0.2) | 1.0 | 1.86 | 1.18 | 0.8 |
+| **CFG (p=0.2)** | **1.0** | **1.86** | **1.18** | **0.8** |
 | CFG (p=0.2) | 3.0 | 1.87 | 1.18 | 0.4 |
 | CFG (p=0.2) | 5.0 | 1.87 | 1.19 | 0.2 |
-| CLAP-CFG | 1.0 | 1.83 | 1.18 | 0.1 |
-| CLAP-CFG | 3.0 | 1.77 | 1.16 | -0.5 |
-| CLAP-CFG | 5.0 | 1.71 | 1.15 | -0.7 |
+| **CLAP-CFG (p=0.1)** | **1.0** | **1.83** | **1.18** | **0.1** |
+| CLAP-CFG (p=0.1) | 3.0 | 1.77 | 1.16 | -0.5 |
+| CLAP-CFG (p=0.1) | 5.0 | 1.71 | 1.15 | -0.7 |
+| CLAP-CFG (p=0.2) | 1.0 | 1.30 | 1.09 | -2.2 |
+| CLAP-CFG (p=0.2) | 3.0 | 1.28 | 1.09 | -2.5 |
+| CLAP-CFG (p=0.2) | 5.0 | 1.26 | 1.08 | -2.4 |
 
-**Observation**: Guidance scale 증가가 오히려 성능 저하를 야기. w=1.0이 최적.
+**Observation**:
+- Guidance scale 증가가 오히려 성능 저하를 야기. w=1.0이 최적
+- CLAP-CFG (p=0.2)는 모든 w에서 성능 저하 → p_uncond 문제
 
 ---
 
@@ -115,14 +123,20 @@
 
 ### 4.3 Comparison: CNN vs CLAP Encoder
 
-| Aspect | CNN (from scratch) | CLAP (pre-trained) |
-|--------|-------------------|-------------------|
-| In-dist Performance | **Best** (1.86) | Good (1.83) |
-| OOD Performance | **Best** (0.8 SI-SDR) | Good (0.1 SI-SDR) |
-| Training Efficiency | Requires task-specific training | Leverages pre-training |
-| Generalization | Good with CFG | Good inherently |
+| Aspect | CNN + CFG (p=0.2) | CLAP + CFG (p=0.1) | CLAP + CFG (p=0.2) |
+|--------|-------------------|-------------------|-------------------|
+| In-dist PESQ | **1.86** | 1.83 | 1.30 |
+| OOD SI-SDR | **0.8** | 0.1 | -2.2 |
+| Optimal p_uncond | 0.2 | 0.1 | - |
 
-**Insight**: From-scratch CNN + CFG가 현재 설정에서 최고 성능. CLAP은 추가적인 pre-training benefit 제공 가능성 있으나 현 실험에서는 CNN+CFG가 우위.
+**Key Insight: Encoder에 따라 optimal p_uncond가 다름**
+
+- **CNN encoder**: p=0.2가 최적. 높은 dropout이 regularization 효과
+- **CLAP encoder**: p=0.1이 최적. p=0.2에서 급격한 성능 저하
+
+**가설**: CLAP embedding은 이미 풍부한 정보를 담고 있어, 높은 dropout rate가 오히려 유용한 정보 손실을 야기. CNN은 task-specific하게 학습되므로 더 강한 regularization이 필요.
+
+**결론**: CNN + CFG (p=0.2)가 현재 best configuration
 
 ---
 
@@ -145,12 +159,19 @@ Guidance Scale (w): 1.0
 Noise Reference Length: 0.25s
 ```
 
+**Final Comparison**:
+| Candidate | In-dist PESQ | OOD SI-SDR | Status |
+|-----------|--------------|------------|--------|
+| **CNN + CFG (p=0.2)** | **1.86** | **0.8** | **Best** |
+| CLAP + CFG (p=0.1) | 1.83 | 0.1 | 2nd |
+| CLAP + CFG (p=0.2) | 1.30 | -2.2 | Failed |
+
 ### 5.3 Limitations & Future Work
 
 1. **Training Scale**: 현재 50k steps, single GPU → Scaled-up training (200k, 4 GPU) 예정
-2. **CLAP-CFG p_uncond**: 현재 p=0.1 → p=0.2로 재학습 필요
-3. **More OOD Datasets**: ESC-50 외 추가 OOD 데이터셋 평가 필요
-4. **Non-stationary Noise**: Cross-attention 기반 temporal modeling 검토
+2. **More OOD Datasets**: ESC-50 외 추가 OOD 데이터셋 평가 필요
+3. **Non-stationary Noise**: Cross-attention 기반 temporal modeling 검토
+4. **CLAP p_uncond 탐색**: p=0.05, 0.15 등 더 낮은 dropout 실험 가능
 
 ---
 
@@ -161,8 +182,21 @@ Noise Reference Length: 0.25s
 1. **CFG 기반 noise guidance가 SGMSE+ 성능을 향상시킨다**: In-distribution에서 PESQ 1.59 → 1.86 (+17%)
 2. **Noise reference guidance로 unseen noise에 대한 일반화가 개선된다**: OOD SI-SDR -1.4 → 0.8 dB (+2.2 dB)
 
-특히 **p_uncond=0.2** 설정의 CFG가 가장 효과적이며, guidance scale은 w=1.0이 최적임을 확인하였다. 향후 scaled-up training을 통해 논문 수준의 성능 달성을 목표로 한다.
+### Key Findings
+
+- **CNN + CFG (p=0.2)**가 최종 best configuration
+- **Encoder에 따라 optimal p_uncond가 다름**: CNN은 p=0.2, CLAP은 p=0.1
+- CLAP의 pre-trained representation이 항상 우수하지는 않음 - task-specific CNN이 적절한 CFG와 결합 시 더 효과적
+- Guidance scale (w)는 w=1.0이 최적, 증가 시 오히려 성능 저하
+
+### Future Work
+
+| Experiment | 목적 | Status |
+|------------|------|--------|
+| Scaled-up (200k, 4GPU) | Paper-level performance | Planned |
+| Additional OOD datasets | Generalization 검증 | Planned |
 
 ---
 
 *Report generated: 2025-01-29*
+*Last updated: 2025-01-30 (CLAP-CFG p=0.2 results added)*

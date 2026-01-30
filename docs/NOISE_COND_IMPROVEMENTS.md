@@ -479,54 +479,59 @@ class ResBlockWithCrossAttention(nn.Module):
 |--------|---------|--------|----------|-------|------------|------------|--------|
 | CLAP-01 | CLAP | Yes | - | 50k | nc-clap-frozen | logs/zxihf3ec-nc-clap-frozen | ✅ Done |
 | CLAP-02 | CLAP | No | - | 50k | nc-clap-finetune | - | ❌ Skipped (DDP issue) |
-| CLAP-CFG | CLAP + CFG | Yes | 0.1 | 50k | nc-clap-cfg | logs/8y7s6j16-nc-clap-cfg | ✅ Done |
+| CLAP-CFG-0.1 | CLAP + CFG | Yes | 0.1 | 50k | nc-clap-cfg | logs/8y7s6j16-nc-clap-cfg | ✅ Done |
+| CLAP-CFG-0.2 | CLAP + CFG | Yes | 0.2 | 50k | nc-clap-cfg-p0.2 | logs/40hr9bep-nc-clap-cfg-p0.2 | ✅ Done |
 
 **Note**: CLAP-finetune (CLAP-02) was skipped due to DDP unused parameters issue. CLAP fine-tuning requires gradient-compatible forward pass which is not currently supported.
 
 #### In-Distribution Results (VB-DEMAND Test)
 
-| Exp ID | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
-|--------|---|--------|---------|----------|
-| CLAP-01 (frozen) | 1.0 | 1.70 ± 0.48 | 0.74 ± 0.17 | 11.5 ± 4.5 |
-| **CLAP-CFG** | **1.0** | **1.83 ± 0.54** | **0.75 ± 0.17** | **12.1 ± 4.6** |
-| CLAP-CFG | 3.0 | 1.77 ± 0.54 | 0.72 ± 0.20 | 11.7 ± 5.2 |
-| CLAP-CFG | 5.0 | 1.71 ± 0.53 | 0.69 ± 0.21 | 11.1 ± 5.5 |
+| Exp ID | p_uncond | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|----------|---|--------|---------|----------|
+| CLAP-01 (frozen) | - | 1.0 | 1.70 ± 0.48 | 0.74 ± 0.17 | 11.5 ± 4.5 |
+| **CLAP-CFG-0.1** | **0.1** | **1.0** | **1.83 ± 0.54** | **0.75 ± 0.17** | **12.1 ± 4.6** |
+| CLAP-CFG-0.1 | 0.1 | 3.0 | 1.77 ± 0.54 | 0.72 ± 0.20 | 11.7 ± 5.2 |
+| CLAP-CFG-0.1 | 0.1 | 5.0 | 1.71 ± 0.53 | 0.69 ± 0.21 | 11.1 ± 5.5 |
+| CLAP-CFG-0.2 | 0.2 | 1.0 | 1.30 ± 0.21 | 0.64 ± 0.16 | 9.1 ± 4.0 |
+| CLAP-CFG-0.2 | 0.2 | 3.0 | 1.28 ± 0.21 | 0.60 ± 0.19 | 8.5 ± 4.5 |
+| CLAP-CFG-0.2 | 0.2 | 5.0 | 1.26 ± 0.22 | 0.56 ± 0.21 | 7.9 ± 5.1 |
 
 #### OOD Results (ESC-50 Noise, SNR 0dB)
 
-| Exp ID | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
-|--------|---|--------|---------|----------|
-| CLAP-01 (frozen) | 1.0 | 1.13 ± 0.21 | 0.46 ± 0.20 | -0.5 ± 3.2 |
-| **CLAP-CFG** | **1.0** | **1.18 ± 0.24** | **0.50 ± 0.23** | **0.1 ± 2.1** |
-| CLAP-CFG | 3.0 | 1.16 ± 0.22 | 0.45 ± 0.25 | -0.5 ± 1.6 |
-| CLAP-CFG | 5.0 | 1.15 ± 0.24 | 0.41 ± 0.26 | -0.7 ± 2.7 |
+| Exp ID | p_uncond | w | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
+|--------|----------|---|--------|---------|----------|
+| CLAP-01 (frozen) | - | 1.0 | 1.13 ± 0.21 | 0.46 ± 0.20 | -0.5 ± 3.2 |
+| **CLAP-CFG-0.1** | **0.1** | **1.0** | **1.18 ± 0.24** | **0.50 ± 0.23** | **0.1 ± 2.1** |
+| CLAP-CFG-0.1 | 0.1 | 3.0 | 1.16 ± 0.22 | 0.45 ± 0.25 | -0.5 ± 1.6 |
+| CLAP-CFG-0.1 | 0.1 | 5.0 | 1.15 ± 0.24 | 0.41 ± 0.26 | -0.7 ± 2.7 |
+| CLAP-CFG-0.2 | 0.2 | 1.0 | 1.09 ± 0.09 | 0.37 ± 0.17 | -2.2 ± 4.8 |
+| CLAP-CFG-0.2 | 0.2 | 3.0 | 1.09 ± 0.09 | 0.35 ± 0.17 | -2.5 ± 4.5 |
+| CLAP-CFG-0.2 | 0.2 | 5.0 | 1.08 ± 0.07 | 0.31 ± 0.18 | -2.4 ± 3.5 |
 
 #### Analysis
 
 **Key Findings:**
 
-1. **CLAP-CFG (w=1.0)이 가장 우수**
-   - In-dist: PESQ 1.83 (CLAP-frozen 1.70 대비 +0.13)
-   - OOD: PESQ 1.18, SI-SDR 0.1 (CLAP-frozen 대비 +0.05, +0.6)
+1. **CLAP-CFG에서 p_uncond=0.1이 최적** (p=0.2는 성능 저하)
+   - In-dist: p=0.1 → PESQ 1.83, p=0.2 → PESQ 1.30 (-0.53)
+   - OOD: p=0.1 → SI-SDR 0.1, p=0.2 → SI-SDR -2.2 (-2.3 dB)
 
-2. **Guidance scale 증가 시 성능 저하**
-   - w=1.0 → w=5.0로 증가할수록 모든 지표 하락
-   - In-dist: PESQ 1.83 → 1.71 (-0.12)
-   - OOD: ESTOI 0.50 → 0.41 (-0.09)
+2. **CNN과 CLAP에서 optimal p_uncond가 다름**
+   - CNN: p=0.2가 최적 (PESQ 1.86)
+   - CLAP: p=0.1이 최적 (PESQ 1.83)
+   - 가설: CLAP embedding은 이미 풍부한 정보를 담고 있어 높은 dropout이 유용한 정보 손실 야기
 
-3. **CFG와 기존 방법 비교**
-   - CLAP-CFG (w=1.0) vs CFG-02 (p=0.2, w=1.0):
-     - In-dist: PESQ 1.83 vs 1.86 (유사)
-     - OOD: PESQ 1.18 vs 1.18 (동일), SI-SDR 0.1 vs 0.8 (CFG-02 우위)
+3. **Guidance scale 증가 시 일관된 성능 저하**
+   - 모든 설정에서 w=1.0이 최적
 
-4. **CLAP의 OOD 일반화 효과**
-   - CLAP-frozen만으로도 OOD에서 합리적인 성능
-   - 단, CFG와 결합 시 추가 향상
+4. **최종 비교: CNN-CFG (p=0.2) vs CLAP-CFG (p=0.1)**
+   - In-dist: CNN 1.86 vs CLAP 1.83 (CNN 우위)
+   - OOD SI-SDR: CNN 0.8 vs CLAP 0.1 (CNN 우위)
 
 **Conclusion:**
-- CLAP + CFG (w=1.0)이 best configuration
-- w 증가는 오히려 성능 저하 → conditioning이 과도해지는 것으로 추정
-- p_uncond=0.2 CFG가 CLAP-CFG보다 OOD SI-SDR에서 우수 → p_uncond=0.2로 CLAP-CFG 재학습 필요
+- **CNN + CFG (p=0.2)가 최종 best configuration**
+- CLAP의 pre-trained representation이 항상 우수하지는 않음
+- Encoder 특성에 따라 최적 CFG dropout rate가 다름
 
 ---
 
