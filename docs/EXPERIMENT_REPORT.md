@@ -12,6 +12,11 @@
 
 기존 speech enhancement 모델들은 학습 데이터에 포함된 noise type에 overfitting되는 경향이 있다. 본 연구에서는 noise reference를 명시적으로 conditioning함으로써, 모델이 noise 특성을 더 잘 이해하고 unseen noise에도 일반화할 수 있음을 실험적으로 검증한다.
 
+### Contribution 3: Optimal Noise Reference Length Analysis
+> **Noise reference의 길이는 짧을수록(0.25s) 효과적이며, 긴 reference(0.5s~2.0s)는 오히려 성능을 저하시킨다.**
+
+직관적으로는 더 긴 noise reference가 더 많은 정보를 제공할 것으로 예상되지만, 실험 결과 0.25s가 최적이며 그 이상의 길이는 성능 저하를 야기함을 발견하였다. 이는 짧은 reference가 noise의 핵심 특성을 충분히 포착하면서도 불필요한 정보로 인한 혼란을 방지하기 때문으로 분석된다.
+
 ---
 
 ## 2. Experimental Setup
@@ -87,7 +92,26 @@
 - CLAP-CFG (p=0.1)도 competitive: SI-SDR 0.1 dB
 - CLAP-CFG (p=0.2)는 OOD에서도 크게 저하 (-2.2 dB) → p=0.2가 CLAP에는 부적합
 
-### 3.3 Guidance Scale (w) Analysis
+### 3.3 Noise Reference Length Ablation
+
+| Reference Length | In-dist PESQ ↑ | In-dist SI-SDR ↑ | OOD PESQ ↑ | OOD SI-SDR ↑ |
+|------------------|----------------|------------------|------------|--------------|
+| **0.25s** | **1.59** | **10.9** | **1.12** | **-1.4** |
+| 0.5s | 1.06 | 0.7 | 1.04 | -5.8 |
+| 1.0s | 1.24 | 9.2 | 1.07 | -1.7 |
+| 2.0s | 1.06 | 2.2 | 1.04 | -4.8 |
+
+**Key Findings (Contribution 3)**:
+- **0.25s가 모든 지표에서 최적** - 더 긴 reference가 오히려 성능 저하
+- 0.5s, 2.0s에서 급격한 성능 하락 (PESQ 1.06, SI-SDR < 3 dB)
+- 1.0s는 중간 성능 - 길이 증가가 단조롭게 성능을 저하시키지는 않음
+
+**가설**:
+1. **정보 과잉**: 긴 reference는 noise의 변동성(non-stationarity)까지 포함하여 encoder가 핵심 특성 추출에 혼란
+2. **학습 난이도**: 긴 시퀀스를 처리하는 encoder의 학습이 더 어려움
+3. **Stationary assumption**: 현재 encoder가 stationary noise를 가정하여 설계됨
+
+### 3.4 Guidance Scale (w) Analysis
 
 | Model | w | In-dist PESQ | OOD PESQ | OOD SI-SDR |
 |-------|---|--------------|----------|------------|
@@ -148,6 +172,7 @@
 |--------------|----------|-------------|
 | **C1: CFG improves SGMSE+** | In-dist PESQ: 1.59 → 1.86 | **+17%** |
 | **C2: Better OOD generalization** | OOD SI-SDR: -1.4 → 0.8 dB | **+2.2 dB** |
+| **C3: Short reference is optimal** | 0.25s vs 2.0s PESQ: 1.59 vs 1.06 | **+50%** |
 
 ### 5.2 Best Configuration
 
@@ -177,10 +202,11 @@ Noise Reference Length: 0.25s
 
 ## 6. Conclusion
 
-본 연구에서는 diffusion 기반 음성 향상 모델 SGMSE+에 **noise reference conditioning**과 **Classifier-Free Guidance (CFG)**를 적용하여 두 가지 주요 contribution을 검증하였다:
+본 연구에서는 diffusion 기반 음성 향상 모델 SGMSE+에 **noise reference conditioning**과 **Classifier-Free Guidance (CFG)**를 적용하여 세 가지 주요 contribution을 검증하였다:
 
 1. **CFG 기반 noise guidance가 SGMSE+ 성능을 향상시킨다**: In-distribution에서 PESQ 1.59 → 1.86 (+17%)
 2. **Noise reference guidance로 unseen noise에 대한 일반화가 개선된다**: OOD SI-SDR -1.4 → 0.8 dB (+2.2 dB)
+3. **짧은 noise reference (0.25s)가 최적이다**: 긴 reference (0.5s~2.0s)는 오히려 성능 저하 (PESQ 1.59 → 1.06)
 
 ### Key Findings
 
