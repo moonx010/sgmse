@@ -20,10 +20,12 @@ from concurrent.futures import ProcessPoolExecutor
 
 EXPERIMENTS = [
     # (name, checkpoint_path, cfg_scale)
-    # CLAP-CFG p=0.2 (with different guidance scales)
-    ("clap_cfg_p0.2_w1.0", "./logs/40hr9bep-nc-clap-cfg-p0.2/step=50000.ckpt", 1.0),
-    ("clap_cfg_p0.2_w3.0", "./logs/40hr9bep-nc-clap-cfg-p0.2/step=50000.ckpt", 3.0),
-    ("clap_cfg_p0.2_w5.0", "./logs/40hr9bep-nc-clap-cfg-p0.2/step=50000.ckpt", 5.0),
+    # Baseline p=0.0 (fair comparison)
+    ("baseline_p0.0", "./logs/mo2egsqt-nc-baseline-p0.0/step=50000.ckpt", 1.0),
+    # CLAP-CFG p=0.05
+    ("clap_cfg_p0.05", "./logs/xg3u3iyo-nc-clap-cfg-p0.05/step=50000.ckpt", 1.0),
+    # CLAP ref 0.5s
+    ("clap_ref0.5s", "./logs/sxkykwxg-nc-clap-ref0.5s/step=50000.ckpt", 1.0),
 ]
 
 DATASETS = [
