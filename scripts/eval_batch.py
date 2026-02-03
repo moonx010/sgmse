@@ -20,8 +20,14 @@ from concurrent.futures import ProcessPoolExecutor
 
 EXPERIMENTS = [
     # (name, checkpoint_path, cfg_scale)
-    # CFG p=0.3
-    ("cfg_p0.3", "./logs/5etsbw0x-nc-cfg-p0.3/step=50000.ckpt", 1.0),
+    # True SGMSE+ baseline (no noise conditioning)
+    ("sgmse_baseline", "./logs/ppwxy81n-sgmse-baseline/step=50000.ckpt", 1.0),
+    # CFG p=0.05
+    ("cfg_p0.05", "./logs/rgzwzm57-nc-cfg-p0.05/step=50000.ckpt", 1.0),
+    # CFG p=0.15
+    ("cfg_p0.15", "./logs/5smxbgly-nc-cfg-p0.15/step=50000.ckpt", 1.0),
+    # CFG p=0.25
+    ("cfg_p0.25", "./logs/9ib5l06k-nc-cfg-p0.25/step=50000.ckpt", 1.0),
 ]
 
 DATASETS = [
