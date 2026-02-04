@@ -64,7 +64,7 @@
 
 | Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
 |-------|--------|---------|----------|
-| **SGMSE+ (no noise cond)** | *pending* | *pending* | *pending* |
+| **SGMSE+ (no noise cond)** | **1.92 ± 0.65** | **0.76 ± 0.17** | **12.5 ± 5.0** |
 | NC-SGMSE+ (p=0.0) | 1.81 ± 0.53 | 0.73 ± 0.17 | 11.1 ± 4.7 |
 | CFG (p=0.05) | 1.07 ± 0.04 | 0.50 ± 0.12 | 3.4 ± 2.2 |
 | CFG (p=0.1) | 1.40 ± 0.26 | 0.69 ± 0.15 | 10.3 ± 4.2 |
@@ -78,9 +78,10 @@
 | CLAP-CFG (p=0.2) | 1.30 ± 0.21 | 0.64 ± 0.16 | 9.1 ± 4.0 |
 
 **Key Findings (Contribution 1)**:
-- CFG (p=0.2)가 baseline 대비 **PESQ +0.27**, **SI-SDR +2.2 dB** 향상
+- **SGMSE+ baseline (no noise cond)이 In-dist에서 최고 성능**: PESQ 1.92, SI-SDR 12.5
+- 노이즈 컨디셔닝은 In-dist 성능을 오히려 저하시킴 (1.92 → 1.86)
+- **노이즈 컨디셔닝의 가치는 OOD 일반화에 있음** (아래 3.2 참조)
 - **CNN vs CLAP에서 optimal p_uncond가 다름**: CNN은 p=0.2, CLAP은 p=0.1이 최적
-- CLAP-CFG (p=0.2)는 오히려 성능 저하 → CLAP embedding이 더 민감하여 높은 dropout에 취약
 
 ### 3.2 Out-of-Distribution Performance (ESC-50 Noise, SNR 0dB)
 
@@ -249,4 +250,4 @@ Noise Reference Length: 0.25s
 ---
 
 *Report generated: 2025-01-29*
-*Last updated: 2025-02-04 (SGMSE+ baseline OOD, CFG p=0.05/0.15/0.25 results added)*
+*Last updated: 2025-02-04 (SGMSE+ baseline In-dist/OOD results added - key finding: noise cond hurts in-dist but helps OOD)*
