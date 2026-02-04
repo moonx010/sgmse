@@ -25,4 +25,4 @@ torchvision
 torchinfo 
 torchsde 
 tqdm 
-wandb
+wandb홈

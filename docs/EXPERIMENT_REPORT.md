@@ -1,34 +1,66 @@
 # Noise-Conditioned SGMSE+: Experiment Report
 
-## 1. Research Contributions
+## 1. Overview
 
-### Contribution 1: Classifier-Free Guidance for Noise-Conditioned Speech Enhancement
-> **CFG (Classifier-Free Guidance) 기반의 noise conditioning을 적용하면 diffusion 기반 음성 향상 모델(SGMSE+)의 성능을 향상시킬 수 있다.**
+This document describes experiments extending **SGMSE+** by conditioning the diffusion process on a short **noise reference** signal using **Classifier-Free Guidance (CFG)**.
 
-기존 SGMSE+는 noisy speech만을 입력으로 사용하여 enhancement를 수행한다. 본 연구에서는 noise reference signal을 추가 conditioning으로 활용하고, CFG를 통해 conditional/unconditional 학습을 동시에 수행함으로써 더 효과적인 noise removal이 가능함을 보인다.
-
-### Contribution 2: Improved Generalization to Unseen Noise Types
-> **Noise reference guidance를 활용하면 학습 시 보지 못한 (unseen/OOD) noise type에 대해서도 더 robust한 enhancement 성능을 달성할 수 있다.**
-
-기존 speech enhancement 모델들은 학습 데이터에 포함된 noise type에 overfitting되는 경향이 있다. 본 연구에서는 noise reference를 명시적으로 conditioning함으로써, 모델이 noise 특성을 더 잘 이해하고 unseen noise에도 일반화할 수 있음을 실험적으로 검증한다.
-
-### Contribution 3: Optimal Noise Reference Length Analysis
-> **Noise reference의 길이는 짧을수록(0.25s) 효과적이며, 긴 reference(0.5s~2.0s)는 오히려 성능을 저하시킨다.**
-
-직관적으로는 더 긴 noise reference가 더 많은 정보를 제공할 것으로 예상되지만, 실험 결과 0.25s가 최적이며 그 이상의 길이는 성능 저하를 야기함을 발견하였다. 이는 짧은 reference가 noise의 핵심 특성을 충분히 포착하면서도 불필요한 정보로 인한 혼란을 방지하기 때문으로 분석된다.
+The goal is to adapt speech enhancement to the target noise environment using only a short noise-only recording available at inference time.
 
 ---
 
-## 2. Experimental Setup
+## 2. Background: SGMSE+
 
-### 2.1 Datasets
+### 2.1 Signal Representation
+
+The input signal is represented as a complex STFT with magnitude compression:
+
+$$\tilde{c} = \beta |c|^{\alpha} e^{j \angle c}$$
+
+### 2.2 Conditional Forward Diffusion
+
+Given noisy observation $y$, SGMSE+ models $p(x \mid y)$ via the forward SDE:
+
+$$\mathrm{d}x_t = \gamma (y - x_t)\,\mathrm{d}t + g(t)\,\mathrm{d}w_t$$
+
+### 2.3 Extension: Noise Reference Conditioning
+
+We extend to model $p(x_0 \mid y, r)$ where $r$ is a noise reference signal:
+
+$$s_\theta(x_t, y, z_r, t) \approx \nabla_{x_t} \log p_t(x_t \mid y, z_r)$$
+
+where $z_r = E_\phi(r)$ is the noise embedding.
+
+---
+
+## 3. Research Contributions
+
+### Contribution 1: CFG for Noise-Conditioned Speech Enhancement
+> **CFG 기반 noise conditioning으로 OOD 일반화 성능 향상**
+
+노이즈 컨디셔닝은 In-distribution에서는 성능 저하를 야기하지만, OOD에서 +1.4 dB SI-SDR 개선을 달성.
+
+### Contribution 2: Improved OOD Generalization
+> **Noise reference guidance로 unseen noise에 대한 일반화 개선**
+
+SGMSE+ baseline 대비 OOD SI-SDR: -0.6 → 0.8 dB (+1.4 dB)
+
+### Contribution 3: Optimal Noise Reference Length
+> **짧은 noise reference (0.25s)가 최적**
+
+긴 reference (0.5s~2.0s)는 오히려 성능 저하.
+
+---
+
+## 4. Experimental Setup
+
+### 4.1 Datasets
 
 | Dataset | Usage | Description |
 |---------|-------|-------------|
-| **VoiceBank-DEMAND** | Training & In-dist Test | 28 speakers, 10 noise types (DEMAND) |
-| **ESC-50** | OOD Test | 50 environmental sound classes, unseen during training |
+| **VoiceBank-DEMAND** | Training & In-dist Test | 28 speakers, 10 noise types |
+| **ESC-50** | OOD Test | 50 environmental sound classes |
 
-### 2.2 Evaluation Metrics
+### 4.2 Evaluation Metrics
 
 | Metric | Description | Range |
 |--------|-------------|-------|
@@ -36,31 +68,31 @@
 | **ESTOI** | Extended Short-Time Objective Intelligibility | 0.0 - 1.0 (↑) |
 | **SI-SDR** | Scale-Invariant Signal-to-Distortion Ratio | dB (↑) |
 
-### 2.3 Model Configurations
+### 4.3 Training Configurations
 
-| Model | Noise Encoder | CFG (p_uncond) | Description |
-|-------|---------------|----------------|-------------|
-| **Baseline** | CNN (from scratch) | - | Noise-conditioned without CFG |
-| **CFG-0.1** | CNN (from scratch) | 0.1 | 10% conditioning dropout |
-| **CFG-0.2** | CNN (from scratch) | 0.2 | 20% conditioning dropout |
-| **CLAP-frozen** | CLAP (frozen) | - | Pre-trained audio encoder |
-| **CLAP-CFG-0.1** | CLAP (frozen) | 0.1 | CLAP + CFG (10% dropout) |
-| **CLAP-CFG-0.2** | CLAP (frozen) | 0.2 | CLAP + CFG (20% dropout) - *Training* |
+#### Reference: Paper Configuration (TASLP 2023)
 
-### 2.4 Training Details
+| Setting | Value |
+|---------|-------|
+| GPUs | 4× RTX 6000 (24GB) |
+| Batch size/GPU | 8 |
+| Effective batch | 32 |
+| Steps | ~58k |
+| Optimizer | Adam, lr=1e-4 |
+| EMA decay | 0.999 |
 
-- **Backbone**: NCSN++ v2 with noise conditioning
-- **SDE**: OUVE (Optimal Unconditional Variance Exploding)
-- **Training Steps**: 50,000
-- **Batch Size**: 4
-- **Learning Rate**: 1e-4
-- **Noise Reference Length**: 0.25s (4,000 samples at 16kHz)
+#### PoC Experiments (50k steps)
+
+| Model | Backbone | Batch Size | GPUs | Steps |
+|-------|----------|------------|------|-------|
+| SGMSE+ baseline | ncsnpp | 4 | 1 | 50k |
+| NC-SGMSE+ (CFG) | ncsnpp_v2_cond | 4 | 1 | 50k |
 
 ---
 
-## 3. Experimental Results
+## 5. Experimental Results
 
-### 3.1 In-Distribution Performance (VoiceBank-DEMAND Test Set)
+### 5.1 In-Distribution Performance (VoiceBank-DEMAND)
 
 | Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
 |-------|--------|---------|----------|
@@ -77,13 +109,12 @@
 | **CLAP-CFG (p=0.1)** | **1.83 ± 0.54** | **0.75 ± 0.17** | **12.1 ± 4.6** |
 | CLAP-CFG (p=0.2) | 1.30 ± 0.21 | 0.64 ± 0.16 | 9.1 ± 4.0 |
 
-**Key Findings (Contribution 1)**:
-- **SGMSE+ baseline (no noise cond)이 In-dist에서 최고 성능**: PESQ 1.92, SI-SDR 12.5
-- 노이즈 컨디셔닝은 In-dist 성능을 오히려 저하시킴 (1.92 → 1.86)
-- **노이즈 컨디셔닝의 가치는 OOD 일반화에 있음** (아래 3.2 참조)
-- **CNN vs CLAP에서 optimal p_uncond가 다름**: CNN은 p=0.2, CLAP은 p=0.1이 최적
+**Key Findings**:
+- SGMSE+ baseline이 In-dist에서 최고 (PESQ 1.92)
+- 노이즈 컨디셔닝은 In-dist 성능 저하 (1.92 → 1.86)
+- **노이즈 컨디셔닝의 가치는 OOD 일반화에 있음**
 
-### 3.2 Out-of-Distribution Performance (ESC-50 Noise, SNR 0dB)
+### 5.2 Out-of-Distribution Performance (ESC-50, SNR 0dB)
 
 | Model | PESQ ↑ | ESTOI ↑ | SI-SDR ↑ |
 |-------|--------|---------|----------|
@@ -100,106 +131,133 @@
 | CLAP-CFG (p=0.1) | 1.18 ± 0.24 | 0.50 ± 0.23 | 0.1 ± 2.1 |
 | CLAP-CFG (p=0.2) | 1.09 ± 0.09 | 0.37 ± 0.17 | -2.2 ± 4.8 |
 
-**Key Findings (Contribution 2)**:
-- **SGMSE+ baseline (no noise cond) OOD SI-SDR: -0.6 dB**
-- **CFG (p=0.2)가 OOD에서 최고 성능**: SI-SDR 0.8 dB → baseline 대비 **+1.4 dB 개선**
+**Key Findings**:
+- **CFG (p=0.2)가 OOD 최고**: SI-SDR 0.8 dB (baseline 대비 +1.4 dB)
 - CLAP-CFG (p=0.1)도 competitive: SI-SDR 0.1 dB
-- CLAP-CFG (p=0.2)는 OOD에서도 크게 저하 (-2.2 dB) → p=0.2가 CLAP에는 부적합
 
-### 3.3 Noise Reference Length Ablation
+### 5.3 Noise Reference Length Ablation
 
-#### CNN Encoder
-
-| Reference Length | In-dist PESQ ↑ | In-dist SI-SDR ↑ | OOD PESQ ↑ | OOD SI-SDR ↑ |
-|------------------|----------------|------------------|------------|--------------|
+| ref_length | In-dist PESQ | In-dist SI-SDR | OOD PESQ | OOD SI-SDR |
+|------------|--------------|----------------|----------|------------|
 | **0.25s** | **1.59** | **10.9** | **1.12** | **-1.4** |
 | 0.5s | 1.06 | 0.7 | 1.04 | -5.8 |
 | 1.0s | 1.24 | 9.2 | 1.07 | -1.7 |
 | 2.0s | 1.06 | 2.2 | 1.04 | -4.8 |
 
-#### CLAP Encoder (가설: 긴 reference 더 잘 활용?)
+**Conclusion**: 0.25s가 최적. 긴 reference는 성능 저하.
 
-| Reference Length | In-dist PESQ ↑ | In-dist SI-SDR ↑ | OOD PESQ ↑ | OOD SI-SDR ↑ |
-|------------------|----------------|------------------|------------|--------------|
-| **0.25s** | **1.70** | **11.5** | 1.13 | -0.5 |
-| 0.5s | 1.59 | 11.6 | 1.13 | -0.3 |
+### 5.4 Guidance Scale Analysis
 
-**결론**: CLAP도 긴 reference가 도움 안됨. 0.25s가 최적.
+| Model | w | In-dist PESQ | OOD SI-SDR |
+|-------|---|--------------|------------|
+| **CFG (p=0.2)** | **1.0** | **1.86** | **0.8** |
+| CFG (p=0.2) | 3.0 | 1.87 | 0.4 |
+| CFG (p=0.2) | 5.0 | 1.87 | 0.2 |
 
-**Key Findings (Contribution 3)**:
-- **0.25s가 모든 지표에서 최적** - 더 긴 reference가 오히려 성능 저하
-- 0.5s, 2.0s에서 급격한 성능 하락 (PESQ 1.06, SI-SDR < 3 dB)
-- 1.0s는 중간 성능 - 길이 증가가 단조롭게 성능을 저하시키지는 않음
-
-**가설**:
-1. **정보 과잉**: 긴 reference는 noise의 변동성(non-stationarity)까지 포함하여 encoder가 핵심 특성 추출에 혼란
-2. **학습 난이도**: 긴 시퀀스를 처리하는 encoder의 학습이 더 어려움
-3. **Stationary assumption**: 현재 encoder가 stationary noise를 가정하여 설계됨
-
-### 3.4 Guidance Scale (w) Analysis
-
-| Model | w | In-dist PESQ | OOD PESQ | OOD SI-SDR |
-|-------|---|--------------|----------|------------|
-| **CFG (p=0.2)** | **1.0** | **1.86** | **1.18** | **0.8** |
-| CFG (p=0.2) | 3.0 | 1.87 | 1.18 | 0.4 |
-| CFG (p=0.2) | 5.0 | 1.87 | 1.19 | 0.2 |
-| **CLAP-CFG (p=0.1)** | **1.0** | **1.83** | **1.18** | **0.1** |
-| CLAP-CFG (p=0.1) | 3.0 | 1.77 | 1.16 | -0.5 |
-| CLAP-CFG (p=0.1) | 5.0 | 1.71 | 1.15 | -0.7 |
-| CLAP-CFG (p=0.2) | 1.0 | 1.30 | 1.09 | -2.2 |
-| CLAP-CFG (p=0.2) | 3.0 | 1.28 | 1.09 | -2.5 |
-| CLAP-CFG (p=0.2) | 5.0 | 1.26 | 1.08 | -2.4 |
-
-**Observation**:
-- Guidance scale 증가가 오히려 성능 저하를 야기. w=1.0이 최적
-- CLAP-CFG (p=0.2)는 모든 w에서 성능 저하 → p_uncond 문제
+**Conclusion**: w=1.0이 최적. 증가 시 OOD 성능 저하.
 
 ---
 
-## 4. Analysis
+## 6. Analysis
 
-### 4.1 Why CFG Improves Performance?
+### 6.1 Why CFG Improves OOD?
 
-1. **Regularization Effect**: Conditioning dropout이 모델의 noise embedding 의존도를 줄여 overfitting 방지
-2. **Robust Conditioning**: Unconditional path 학습으로 conditioning이 불완전할 때도 안정적 동작
-3. **Optimal Dropout Rate**: p=0.2가 conditional/unconditional 학습 균형점
+1. **Regularization**: Conditioning dropout이 overfitting 방지
+2. **Robust Conditioning**: Unconditional path가 불완전한 conditioning 보완
+3. **Graceful Degradation**: OOD에서 conditioning 신뢰도 낮아도 동작
 
-### 4.2 Why Better OOD Generalization?
+### 6.2 CNN vs CLAP Encoder
 
-1. **Explicit Noise Modeling**: Noise reference를 명시적으로 encoding하여 noise 특성 이해
-2. **CFG's Graceful Degradation**: OOD noise에서 conditioning 신뢰도가 낮아도 unconditional path가 보완
-3. **Pre-trained Encoder Benefit**: CLAP의 다양한 audio에 대한 사전 학습이 OOD 일반화에 기여
+| Aspect | CNN + CFG (p=0.2) | CLAP + CFG (p=0.1) |
+|--------|-------------------|-------------------|
+| In-dist PESQ | **1.86** | 1.83 |
+| OOD SI-SDR | **0.8** | 0.1 |
+| Optimal p | 0.2 | 0.1 |
 
-### 4.3 Comparison: CNN vs CLAP Encoder
-
-| Aspect | CNN + CFG (p=0.2) | CLAP + CFG (p=0.1) | CLAP + CFG (p=0.2) |
-|--------|-------------------|-------------------|-------------------|
-| In-dist PESQ | **1.86** | 1.83 | 1.30 |
-| OOD SI-SDR | **0.8** | 0.1 | -2.2 |
-| Optimal p_uncond | 0.2 | 0.1 | - |
-
-**Key Insight: Encoder에 따라 optimal p_uncond가 다름**
-
-- **CNN encoder**: p=0.2가 최적. 높은 dropout이 regularization 효과
-- **CLAP encoder**: p=0.1이 최적. p=0.2에서 급격한 성능 저하
-
-**가설**: CLAP embedding은 이미 풍부한 정보를 담고 있어, 높은 dropout rate가 오히려 유용한 정보 손실을 야기. CNN은 task-specific하게 학습되므로 더 강한 regularization이 필요.
-
-**결론**: CNN + CFG (p=0.2)가 현재 best configuration
+**Insight**: Encoder에 따라 optimal dropout rate가 다름
 
 ---
 
-## 5. Summary
+## 7. Scaled Training Experiments
 
-### 5.1 Main Results
+### 7.1 Configuration (Paper-level)
 
-| Contribution | Evidence | Improvement |
-|--------------|----------|-------------|
-| **C1: CFG improves SGMSE+** | In-dist PESQ: 1.59 → 1.86 | **+17%** |
-| **C2: Better OOD generalization** | OOD SI-SDR: -1.4 → 0.8 dB | **+2.2 dB** |
-| **C3: Short reference is optimal** | 0.25s vs 2.0s PESQ: 1.59 vs 1.06 | **+50%** |
+| Setting | Value |
+|---------|-------|
+| GPUs | 4 |
+| Batch size/GPU | 8 |
+| Effective batch | 32 |
+| Steps | 58,000 |
 
-### 5.2 Best Configuration
+### 7.2 Experiments
+
+| Exp ID | Model | Command | Status |
+|--------|-------|---------|--------|
+| SCALE-01 | CFG (p=0.2) | `CUDA_VISIBLE_DEVICES=0,1,2,3 python train_noise_cond.py --base_dir ./data/voicebank-demand --backbone ncsnpp_v2_cond --devices 4 --batch_size 8 --max_steps 58000 --cond_drop_prob 0.2 --wandb_name nc-cfg-p0.2-scaled` | 🔄 Training |
+| SCALE-02 | SGMSE+ baseline | `CUDA_VISIBLE_DEVICES=4,5,6,7 python train.py --base_dir ./data/voicebank-demand --backbone ncsnpp --devices 4 --batch_size 8 --max_steps 58000 --wandb_name sgmse-paper-config` | 🔄 Training |
+
+### 7.3 Expected Outcomes
+
+- SCALE-01: Paper-level CFG performance (target PESQ > 2.5)
+- SCALE-02: Reproduce paper baseline for fair comparison
+
+---
+
+## 8. Commands Reference
+
+### Training
+
+```bash
+# SGMSE+ baseline (paper config)
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --base_dir ./data/voicebank-demand --backbone ncsnpp --devices 4 --batch_size 8 --max_steps 58000 --wandb_name sgmse-paper-config
+
+# Noise-conditioned CFG (paper scale)
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train_noise_cond.py --base_dir ./data/voicebank-demand --backbone ncsnpp_v2_cond --devices 4 --batch_size 8 --max_steps 58000 --cond_drop_prob 0.2 --wandb_name nc-cfg-p0.2-scaled
+```
+
+### Enhancement
+
+```bash
+# SGMSE+ baseline
+python enhancement.py --test_dir ./data/voicebank-demand/test/noisy --enhanced_dir ./enhanced_dir --ckpt CKPT_PATH --N 30 --device cuda
+
+# Noise-conditioned (oracle reference)
+python enhancement_noise_cond.py --test_dir ./data/test_dir --enhanced_dir ./enhanced_dir --ckpt CKPT_PATH --oracle_noise --clean_dir ./clean_dir --N 30 --device cuda
+```
+
+### Metrics
+
+```bash
+python calc_metrics.py --clean_dir ./clean_dir --noisy_dir ./noisy_dir --enhanced_dir ./enhanced_dir
+```
+
+---
+
+## 9. Checkpoints
+
+### PoC Experiments (50k steps)
+
+| Model | wandb_name | Checkpoint |
+|-------|------------|------------|
+| SGMSE+ baseline | sgmse-baseline | logs/ppwxy81n-sgmse-baseline/step=50000.ckpt |
+| CFG (p=0.2) | nc-cfg-p0.2 | logs/[run_id]/step=50000.ckpt |
+| CFG (p=0.3) | nc-cfg-p0.3 | logs/[run_id]/step=50000.ckpt |
+| CLAP-CFG (p=0.1) | nc-clap-cfg-p0.1 | logs/[run_id]/step=50000.ckpt |
+
+### Reference Length Ablation
+
+| ref_length | wandb_name | Checkpoint |
+|------------|------------|------------|
+| 0.25s | nc-ref-0.25s | logs/zqtm721z-nc-ref-0.25s/step=50000.ckpt |
+| 0.5s | nc-ref-0.5s | logs/7tucs4jy-nc-ref-0.5s/step=50000.ckpt |
+| 1.0s | nc-ref-1.0s | logs/sr8toljy-nc-ref-1.0s/step=50000.ckpt |
+| 2.0s | nc-ref-2.0s | logs/5xbd359r-nc-ref-2.0s/step=50000.ckpt |
+
+---
+
+## 10. Summary
+
+### Best Configuration
 
 ```
 Model: Noise-Conditioned SGMSE+ with CFG
@@ -209,45 +267,18 @@ Guidance Scale (w): 1.0
 Noise Reference Length: 0.25s
 ```
 
-**Final Comparison**:
-| Candidate | In-dist PESQ | OOD SI-SDR | Status |
-|-----------|--------------|------------|--------|
-| **CNN + CFG (p=0.2)** | **1.86** | **0.8** | **Best** |
-| CLAP + CFG (p=0.1) | 1.83 | 0.1 | 2nd |
-| CLAP + CFG (p=0.2) | 1.30 | -2.2 | Failed |
+### Main Results
 
-### 5.3 Limitations & Future Work
+| Contribution | Evidence | Improvement |
+|--------------|----------|-------------|
+| **OOD generalization** | SI-SDR: -0.6 → 0.8 dB | **+1.4 dB** |
+| **Short reference optimal** | 0.25s vs 2.0s | **+50% PESQ** |
 
-1. **Training Scale**: 현재 50k steps, single GPU → Scaled-up training (200k, 4 GPU) 예정
-2. **More OOD Datasets**: ESC-50 외 추가 OOD 데이터셋 평가 필요
-3. **Non-stationary Noise**: Cross-attention 기반 temporal modeling 검토
-4. **CLAP p_uncond 탐색**: p=0.05, 0.15 등 더 낮은 dropout 실험 가능
+### Key Insight
+
+**노이즈 컨디셔닝은 In-dist에서는 손해, OOD에서 이득.**
 
 ---
 
-## 6. Conclusion
-
-본 연구에서는 diffusion 기반 음성 향상 모델 SGMSE+에 **noise reference conditioning**과 **Classifier-Free Guidance (CFG)**를 적용하여 세 가지 주요 contribution을 검증하였다:
-
-1. **CFG 기반 noise guidance가 SGMSE+ 성능을 향상시킨다**: In-distribution에서 PESQ 1.59 → 1.86 (+17%)
-2. **Noise reference guidance로 unseen noise에 대한 일반화가 개선된다**: OOD SI-SDR -1.4 → 0.8 dB (+2.2 dB)
-3. **짧은 noise reference (0.25s)가 최적이다**: 긴 reference (0.5s~2.0s)는 오히려 성능 저하 (PESQ 1.59 → 1.06)
-
-### Key Findings
-
-- **CNN + CFG (p=0.2)**가 최종 best configuration
-- **Encoder에 따라 optimal p_uncond가 다름**: CNN은 p=0.2, CLAP은 p=0.1
-- CLAP의 pre-trained representation이 항상 우수하지는 않음 - task-specific CNN이 적절한 CFG와 결합 시 더 효과적
-- Guidance scale (w)는 w=1.0이 최적, 증가 시 오히려 성능 저하
-
-### Future Work
-
-| Experiment | 목적 | Status |
-|------------|------|--------|
-| Scaled-up (200k, 4GPU) | Paper-level performance | Planned |
-| Additional OOD datasets | Generalization 검증 | Planned |
-
----
-
-*Report generated: 2025-01-29*
-*Last updated: 2025-02-04 (SGMSE+ baseline In-dist/OOD results added - key finding: noise cond hurts in-dist but helps OOD)*
+*Last updated: 2025-02-04*
+*Scaled training (SCALE-01, SCALE-02) in progress*
