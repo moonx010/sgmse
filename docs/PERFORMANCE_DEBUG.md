@@ -202,9 +202,11 @@ print(f"Embedding norm range: [{embeddings.norm(dim=-1).min():.4f}, {embeddings.
 # 1. N=50 평가 (진행 중)
 python scripts/eval_batch.py --phase all --gpus 4,5,6,7
 
-# 2. 논문 pretrained checkpoint 다운로드 및 테스트
-gdown 1_H3EXvhcYBhOZ9QNUcD5VZHc6ktrRbwQ -O pretrained_vbdmd.ckpt
+# 2. 논문 pretrained checkpoint 테스트 (진행 중)
+# Enhancement (진행 중):
 python enhancement.py --test_dir ./data/voicebank-demand/test/noisy --enhanced_dir ./enhanced_pretrained --ckpt pretrained_vbdmd.ckpt --N 50
+
+# Metrics (enhance 완료 후 실행):
 python calc_metrics.py --clean_dir ./data/voicebank-demand/test/clean --noisy_dir ./data/voicebank-demand/test/noisy --enhanced_dir ./enhanced_pretrained
 ```
 
