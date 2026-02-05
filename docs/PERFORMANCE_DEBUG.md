@@ -1,4 +1,105 @@
-# Performance Debugging: Noise-Conditioned SGMSE+
+# Paper Improvement & Debugging Tracker
+
+> 이 문서는 Interspeech 2026 논문 제출을 위해 해결해야 할 기술적 문제와 논문 품질 개선 사항을 추적합니다.
+
+---
+
+## 0. Reviewer Perspective Analysis (Interspeech 기준)
+
+### 0.1 예상 Rejection 사유
+
+#### ❌ Critical Issues (Accept 불가)
+
+| Issue | Severity | 현재 상태 | 해결 방안 |
+|-------|----------|----------|----------|
+| **실험 결과가 주장을 뒷받침하지 않음** | Critical | CFG가 OOD에서 오히려 나쁨 | 원인 파악 및 재실험 필수 |
+| **Baseline 재현 실패** | Critical | PESQ 2.9 vs 1.88 | Eval 설정 검증 필요 |
+| **Novelty 부족** | Major | CFG를 SE에 적용만 함 | 추가 contribution 필요 |
+
+#### ⚠️ Major Issues (Major Revision)
+
+| Issue | Description | 해결 방안 |
+|-------|-------------|----------|
+| **비교 실험 부족** | 다른 noise-aware SE 방법과 비교 없음 | MetricGAN+, DEMUCS 등과 비교 |
+| **OOD 데이터셋 단일** | ESC-50만 사용 | UrbanSound8K, AudioSet 추가 |
+| **Analysis 부족** | Noise encoder가 뭘 학습하는지 분석 없음 | t-SNE, attention map 시각화 |
+| **Ablation 불충분** | Reference length, guidance scale 등 | 체계적 ablation 추가 |
+
+#### 📝 Minor Issues (Minor Revision)
+
+| Issue | Description |
+|-------|-------------|
+| Abstract/Conclusion 미작성 | 실험 완료 후 작성 필요 |
+| Related Work 섹션 없음 | 필요시 추가 |
+| Figure 부재 | Architecture diagram 필요 |
+
+---
+
+### 0.2 논문 강화를 위한 필수 실험
+
+#### A. Baseline 검증 (최우선)
+```
+목표: 우리 evaluation이 정확한지 확인
+방법: 논문 pretrained checkpoint로 동일 결과 재현
+기대: PESQ ~2.9, SI-SDR ~17
+```
+
+#### B. Conditioning 효과 증명
+```
+목표: Noise conditioning이 실제로 작동하는지 증명
+실험:
+1. Zero embedding vs Real embedding 비교
+2. Random noise reference vs Oracle reference 비교
+3. Mismatched noise reference 테스트 (다른 noise type으로 conditioning)
+기대: Real > Zero, Oracle > Random, Matched > Mismatched
+```
+
+#### C. OOD 일반화 증명
+```
+목표: 다양한 OOD 환경에서 개선 확인
+실험:
+1. ESC-50 (현재)
+2. UrbanSound8K
+3. AudioSet subset
+4. Real-world recordings
+기대: 모든 OOD에서 baseline 대비 개선
+```
+
+#### D. 비교 실험
+```
+목표: 다른 방법들과 공정한 비교
+비교 대상:
+1. SGMSE+ (baseline)
+2. MetricGAN+ (discriminative)
+3. DEMUCS (end-to-end)
+4. CDiffuSE (다른 diffusion SE)
+```
+
+#### E. Analysis & Visualization
+```
+목표: 논문의 설득력 강화
+실험:
+1. Noise embedding t-SNE (noise type별 clustering)
+2. Conditional vs Unconditional score difference map
+3. Enhancement 과정 시각화 (spectrogram)
+4. Failure case 분석
+```
+
+---
+
+### 0.3 논문 Contribution 강화 방안
+
+현재 contribution이 약함. 다음 중 1-2개 추가 필요:
+
+| 추가 Contribution | 난이도 | Impact | 설명 |
+|------------------|--------|--------|------|
+| **Noise-type adaptive guidance** | Medium | High | Noise type에 따라 guidance scale 자동 조절 |
+| **Self-supervised noise encoder** | High | High | Contrastive learning으로 noise encoder 사전학습 |
+| **Lightweight noise encoder** | Low | Medium | 효율적인 encoder로 실시간 처리 가능 |
+| **Multi-condition fusion** | Medium | Medium | SNR + noise type 동시 conditioning |
+| **Theoretical analysis** | High | High | CFG가 왜 OOD에 도움되는지 이론적 분석 |
+
+---
 
 ## 1. Problem Statement
 
@@ -248,5 +349,78 @@ python calc_metrics.py --clean_dir ./data/voicebank-demand/test/clean --noisy_di
 
 ---
 
+## 7. Paper Improvement Roadmap
+
+### Phase 1: 기술적 문제 해결 (현재)
+- [ ] Baseline 성능 gap 원인 파악
+- [ ] CFG 모델 성능 저하 원인 파악
+- [ ] Evaluation 코드 검증
+
+### Phase 2: 핵심 실험 보완
+- [ ] Conditioning 효과 증명 (zero vs real embedding)
+- [ ] 추가 OOD 데이터셋 (UrbanSound8K)
+- [ ] 비교 실험 (MetricGAN+ 등)
+
+### Phase 3: Analysis 강화
+- [ ] Noise embedding 시각화 (t-SNE)
+- [ ] Score difference 분석
+- [ ] Failure case 분석
+
+### Phase 4: 논문 작성 완료
+- [ ] Abstract 작성
+- [ ] Results 테이블 업데이트
+- [ ] Conclusion 작성
+- [ ] Architecture Figure 추가
+
+---
+
+## 8. Quick Reference: 핵심 질문들
+
+논문 accept를 위해 답해야 할 질문들:
+
+1. **Why noise conditioning?**
+   - Noisy input에 이미 noise 정보가 있는데 왜 별도 reference가 필요한가?
+   - → 답: Explicit conditioning으로 더 정확한 noise characterization 가능
+
+2. **Why CFG?**
+   - 단순 conditioning 대신 CFG를 쓰는 이유는?
+   - → 답: OOD noise에서 graceful degradation, unconditional fallback
+
+3. **What does noise encoder learn?**
+   - Encoder가 의미있는 noise representation을 학습하는가?
+   - → 답: t-SNE로 noise type clustering 시각화 필요
+
+4. **When does it fail?**
+   - 어떤 상황에서 baseline보다 나빠지는가?
+   - → 답: Failure case 분석 필요
+
+5. **Is it practical?**
+   - 실제 환경에서 noise reference를 어떻게 얻는가?
+   - → 답: Voice activity detection으로 noise-only 구간 추출
+
+---
+
+## 9. Experiment Checklist for Submission
+
+### Must Have (Accept 필수조건)
+- [ ] Baseline 성능 재현 (PESQ > 2.5)
+- [ ] CFG가 OOD에서 baseline 대비 개선
+- [ ] Conditioning 효과 증명 실험
+- [ ] 최소 2개 OOD 데이터셋
+
+### Should Have (경쟁력 확보)
+- [ ] 1개 이상 비교 방법
+- [ ] Noise embedding 시각화
+- [ ] Ablation study (p, w, ref_length)
+
+### Nice to Have (강력한 논문)
+- [ ] 3개 이상 비교 방법
+- [ ] Real-world evaluation
+- [ ] 추가 contribution (adaptive guidance 등)
+- [ ] Theoretical analysis
+
+---
+
 *Created: 2026-02-05*
-*Status: Active Investigation*
+*Last Updated: 2026-02-05*
+*Status: Active Investigation - Phase 1*
