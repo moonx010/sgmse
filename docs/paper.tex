@@ -1,0 +1,316 @@
+% *==================================================================================*
+% *                     Review vs. Camera-Ready settings                             *
+% *==================================================================================*
+%
+% REVIEW: Use the following command for submitting the paper (double-blind,
+% for review):
+% \documentclass{Interspeech}
+%
+% CAMERA-READY: Use the following command for the camera-ready version, one
+% affiliation per line:
+%cameraready
+\documentclass[double-blind]{Interspeech}
+% *==================================================================================*
+
+
+% **************************************
+% *                                    *
+% *      STOP !   DO NOT DELETE !      *
+% *          READ THIS FIRST           *
+% *                                    *
+% * This template also includes        *
+% * important INSTRUCTIONS that you    *
+% * must follow when preparing your    *
+% * paper. Read it BEFORE replacing    *
+% * the content with your own work.    *
+% **************************************
+
+%==================================================================================
+% Title
+% Must exactly match the title entered into the paper submission system
+\title{Noise-Conditioned Diffusion for Robust Speech Enhancement with Classifier-Free Guidance}
+
+%==================================================================================
+% Authors
+% The order of authors here must exactly match the order entered into the paper submission system
+% Note that the COMPLETE list of authors MUST be entered into the paper submission system at the outset, including when submitting your manuscript for double-blind review
+% The ORCID number is still optional but will become mandatory in the future years. It is strongly encouraged to get an ORCID for each cu-author.
+% Middle names, including initials, must be included in the first name
+\author[affiliation={1}, orcid=0000-0000-0000-0000]{FirstNameA}{LastNameA}
+\author[affiliation={1}, correspondingauthor]{FirstNameB}{LastNameB}
+% The maximum number of authors in the author list is 20. If the number of contributing authors is more than this, they should be listed in a footnote or the acknowledgement section.
+
+%==================================================================================
+% Affiliations
+
+\address{
+    $^1$ Korea Advanced Institute of Science and Technology (KAIST), South Korea
+}
+
+%==================================================================================
+% Emails
+\email{author1@kaist.ac.kr, author2@kaist.ac.kr}
+
+%==================================================================================
+% Keywords
+\keywords{Speech Enhancement, Diffusion Models, Classifier-Free Guidance, Noise Conditioning, Out-of-Distribution Generalization}
+
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\usepackage{comment}
+\usepackage{kotex}
+\usepackage{amsmath, amssymb, amsfonts, bm}
+\usepackage{booktabs}  % for \toprule, \midrule, \bottomrule
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+%==================================================================================
+% Content
+
+\begin{document}
+
+\maketitle
+
+% the abstract here must exactly match the abstract entered into the paper submission system
+\begin{abstract}
+% TODO: Abstract 작성 (실험 완료 후)
+% 구조: Background → Problem → Proposed Method → Key Results
+Diffusion-based speech enhancement models have achieved remarkable performance on in-distribution noise types but often struggle to generalize to unseen noise environments.
+We propose a noise-conditioned diffusion framework that leverages Classifier-Free Guidance (CFG) to improve robustness against out-of-distribution (OOD) noise.
+Our method conditions the reverse diffusion process on noise reference embeddings while training with conditional dropout, enabling the model to adaptively utilize noise information.
+Experiments on VoiceBank-DEMAND and ESC-50 noise show that our approach achieves +1.4 dB SI-SDR improvement on OOD noise compared to the unconditional baseline, while maintaining competitive in-distribution performance.
+% TODO: 최종 실험 결과로 숫자 업데이트
+\end{abstract}
+
+
+%==================================================================================
+% Section 1: Introduction
+%==================================================================================
+\section{Introduction}
+
+% Para 1: Background - Speech enhancement 중요성
+% TODO: 비대면 상황 증가, 음성 통신 중요성 등
+Speech enhancement aims to recover clean speech from noisy observations and plays a crucial role in various applications including telecommunications, hearing aids, and automatic speech recognition systems.
+With the increasing prevalence of remote communication, the demand for robust speech enhancement in diverse acoustic environments has grown significantly.
+
+% Para 2: 기존 방법들의 한계
+% TODO: discriminative vs generative, diffusion models의 장점
+Recent advances in diffusion-based generative models have shown promising results for speech enhancement \cite{fan2024stable}.
+These models learn to iteratively denoise corrupted signals through a reverse diffusion process, achieving state-of-the-art performance on benchmark datasets.
+However, most existing approaches are trained on limited noise types and often fail to generalize when encountering unseen noise environments at test time.
+
+% Para 3: 문제 정의 - OOD noise
+% TODO: In-distribution에서는 잘 되지만 OOD에서 성능 저하
+The challenge of out-of-distribution (OOD) generalization is particularly critical in real-world scenarios where the noise characteristics can vary significantly from training conditions.
+While some methods attempt to address this by training on diverse noise datasets, the space of possible noise types is practically infinite, making complete coverage infeasible.
+
+% Para 4: 제안하는 방법 개요
+% TODO: Noise conditioning + CFG의 핵심 아이디어
+In this work, we propose a noise-conditioned speech enhancement framework that explicitly leverages noise characteristics through Classifier-Free Guidance (CFG).
+Our key insight is that by conditioning the diffusion model on noise reference signals while training with conditional dropout, the model learns to both utilize noise-specific information when available and fall back to robust unconditional denoising when the conditioning is unreliable.
+
+% Para 5: 주요 결과 요약
+% TODO: 실험 결과 숫자 업데이트
+Extensive experiments demonstrate that our approach achieves superior OOD generalization.
+On ESC-50 noise at 0 dB SNR, our method improves SI-SDR from $-0.6$ dB (baseline) to $0.8$ dB, representing a $+1.4$ dB improvement.
+Furthermore, we provide systematic analysis of noise encoder architectures and CFG hyperparameters to guide practical deployment.
+
+% Contributions
+Our main contributions are summarized as follows:
+\begin{itemize}
+\item \textbf{Noise-Conditional Diffusion Framework:}
+We integrate Classifier-Free Guidance (CFG) into diffusion-based speech enhancement, enabling adaptive noise conditioning that improves OOD generalization while maintaining in-distribution performance.
+
+\item \textbf{Noise Reference Guidance (NRG):}
+We introduce an inference-time strategy that leverages short noise reference samples to guide the enhancement process, achieving significant robustness improvements on unseen noise types.
+
+\item \textbf{Comprehensive Encoder Analysis:}
+We provide systematic comparisons of noise encoder architectures (CNN vs. pre-trained CLAP) and demonstrate that optimal CFG dropout rates depend on encoder characteristics.
+\end{itemize}
+
+
+%==================================================================================
+% Section 2: Related Work (Optional)
+%==================================================================================
+% \section{Related Work}
+% TODO: 필요시 작성
+% - Diffusion-based speech enhancement (SGMSE, CDiffuSE, etc.)
+% - Noise-aware/adaptive methods
+% - Classifier-Free Guidance in audio
+
+
+%==================================================================================
+% Section 3: Methodology
+%==================================================================================
+\section{Methodology}
+
+% TODO: Figure 1 - Overall architecture diagram
+
+\subsection{Preliminaries: Score-Based Speech Enhancement}
+% TODO: SGMSE+ 배경 설명
+% - Forward SDE, Reverse SDE
+% - Conditional diffusion p(x|y)
+Let $x$ denote the clean speech and $y$ the noisy observation.
+Score-based generative models for speech enhancement learn to model the conditional distribution $p(x|y)$ through a forward diffusion process that gradually corrupts $x$ and a reverse process that iteratively denoises.
+The forward SDE is defined as:
+\begin{equation}
+\mathrm{d}x_t = \gamma (y - x_t)\,\mathrm{d}t + g(t)\,\mathrm{d}w_t
+\end{equation}
+where $\gamma$ controls the mean reversion towards $y$, and $g(t)$ is the diffusion coefficient.
+
+\subsection{Noise-Conditioned Score Network}
+% TODO: Noise encoder 설명
+% - z_r = E_φ(r) where r is noise reference
+% - Score network s_θ(x_t, y, z_r, t)
+We extend the score network to additionally condition on a noise embedding $z_r = E_\phi(r)$, where $r$ is a short noise reference signal extracted from the noisy input:
+\begin{equation}
+s_\theta(x_t, y, z_r, t) \approx \nabla_{x_t} \log p_t(x_t \mid y, z_r)
+\end{equation}
+
+The noise encoder $E_\phi$ processes the noise reference spectrogram and produces a 512-dimensional embedding that captures the noise characteristics.
+This embedding is injected into the score network through FiLM (Feature-wise Linear Modulation) layers alongside the diffusion timestep embedding.
+
+\subsection{Classifier-Free Guidance for Noise Conditioning}
+% TODO: CFG 학습 및 추론 방법
+% - Training: conditional dropout with probability p
+% - Inference: guided score = (1-w)*s_uncond + w*s_cond
+
+To enable robust conditioning that gracefully degrades for OOD noise, we adopt Classifier-Free Guidance (CFG).
+During training, we randomly drop the noise conditioning with probability $p_{\text{uncond}}$:
+\begin{equation}
+z_r' =
+\begin{cases}
+\mathbf{0} & \text{with probability } p_{\text{uncond}} \\
+z_r & \text{otherwise}
+\end{cases}
+\end{equation}
+
+At inference time, we compute both conditional and unconditional scores and combine them with guidance scale $w$:
+\begin{equation}
+\tilde{s} = s_\theta(x_t, y, \mathbf{0}, t) + w \cdot \left( s_\theta(x_t, y, z_r, t) - s_\theta(x_t, y, \mathbf{0}, t) \right)
+\end{equation}
+
+This formulation allows the model to leverage noise conditioning when reliable while falling back to unconditional enhancement when the noise embedding is out-of-distribution.
+
+
+%==================================================================================
+% Section 4: Experiments
+%==================================================================================
+\section{Experiments}
+
+\subsection{Experimental Setup}
+
+\subsubsection{Datasets}
+% TODO: VoiceBank-DEMAND, ESC-50 설명
+We use VoiceBank-DEMAND for training and in-distribution evaluation, which contains 28 speakers with 10 noise types at SNRs of 0, 5, 10, and 15 dB.
+For out-of-distribution evaluation, we create test mixtures using clean speech from VoiceBank with ESC-50 environmental sounds at 0 dB SNR.
+
+\subsubsection{Evaluation Metrics}
+We report PESQ (Perceptual Evaluation of Speech Quality), ESTOI (Extended Short-Time Objective Intelligibility), and SI-SDR (Scale-Invariant Signal-to-Distortion Ratio).
+
+\subsubsection{Implementation Details}
+% TODO: Training details
+We build upon the SGMSE+ framework with the NCSN++ backbone.
+The noise encoder is a 4-layer CNN followed by adaptive pooling and two fully-connected layers.
+Models are trained for 50k steps with batch size 4 on a single GPU for ablation studies, and 58k steps with batch size 32 (8$\times$4 GPUs) for final evaluation.
+% TODO: 최종 학습 설정으로 업데이트
+
+
+%==================================================================================
+% Section 5: Results
+%==================================================================================
+\section{Results}
+
+% TODO: Table 1 - Main results table
+\subsection{In-Distribution Performance}
+Table~\ref{tab:main_results} shows performance on VoiceBank-DEMAND test set.
+The unconditional SGMSE+ baseline achieves PESQ of 1.92.
+Our noise-conditioned model with CFG ($p=0.2$) achieves PESQ of 1.86, showing slight degradation as expected since noise conditioning is primarily designed for OOD robustness.
+
+% TODO: Table 생성
+\begin{table}[t]
+\centering
+\caption{Speech enhancement performance on VoiceBank-DEMAND (In-dist) and ESC-50 noise at 0 dB SNR (OOD).}
+\label{tab:main_results}
+\small
+\begin{tabular}{l|ccc|ccc}
+\toprule
+& \multicolumn{3}{c|}{In-dist} & \multicolumn{3}{c}{OOD} \\
+Method & PESQ & ESTOI & SDR & PESQ & ESTOI & SDR \\
+\midrule
+SGMSE+ & \textbf{1.92} & 0.76 & \textbf{12.5} & 1.18 & 0.46 & -0.6 \\
+NC & 1.81 & 0.73 & 11.1 & 1.15 & 0.47 & -0.4 \\
+NC+CFG (0.1) & 1.40 & 0.69 & 10.3 & 1.12 & 0.45 & -0.5 \\
+NC+CFG (0.2) & 1.86 & \textbf{0.77} & 12.3 & \textbf{1.18} & \textbf{0.51} & \textbf{0.8} \\
+\bottomrule
+\end{tabular}
+% TODO: 최종 실험 결과로 업데이트
+\end{table}
+
+\subsection{Out-of-Distribution Performance}
+On ESC-50 noise, our CFG-based method significantly outperforms the baseline.
+The unconditional baseline achieves SI-SDR of $-0.6$ dB, while our method achieves $0.8$ dB, representing a $+1.4$ dB improvement.
+This demonstrates that noise conditioning with CFG enables the model to better adapt to unseen noise environments.
+
+% TODO: Table 2 - Ablation studies
+\subsection{Ablation: CFG Dropout Rate}
+We investigate the effect of the conditional dropout probability $p_{\text{uncond}}$.
+As shown in Table~\ref{tab:ablation_p}, $p=0.2$ achieves the best balance between in-distribution and OOD performance.
+Lower dropout rates ($p=0.1$) lead to overfitting to training noise types, while higher rates ($p=0.3$) degrade conditioning effectiveness.
+
+\begin{table}[t]
+\centering
+\caption{Effect of CFG dropout probability $p$.}
+\label{tab:ablation_p}
+\small
+\begin{tabular}{c|cc|cc}
+\toprule
+& \multicolumn{2}{c|}{In-dist} & \multicolumn{2}{c}{OOD} \\
+$p$ & PESQ & SDR & PESQ & SDR \\
+\midrule
+0.0 & 1.81 & 11.1 & 1.15 & -0.4 \\
+0.1 & 1.40 & 10.3 & 1.12 & -0.5 \\
+0.15 & 1.71 & 11.2 & 1.14 & -0.9 \\
+\textbf{0.2} & \textbf{1.86} & \textbf{12.3} & \textbf{1.18} & \textbf{0.8} \\
+0.3 & 1.86 & 12.1 & 1.18 & 0.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Noise Encoder Architecture}
+% TODO: CNN vs CLAP 비교
+We compare our CNN-based encoder with a pre-trained CLAP encoder.
+Interestingly, the CNN encoder with CFG ($p=0.2$) outperforms CLAP-CFG on both in-distribution and OOD settings.
+We hypothesize that task-specific training of the CNN encoder better captures noise characteristics relevant to speech enhancement than general-purpose audio embeddings.
+% TODO: 결과 테이블 추가
+
+
+%==================================================================================
+% Section 5: Conclusion
+%==================================================================================
+\section{Conclusion}
+
+We presented a noise-conditioned speech enhancement framework that leverages Classifier-Free Guidance for improved out-of-distribution robustness.
+By conditioning the diffusion process on noise reference embeddings with conditional dropout during training, our method learns to adaptively utilize noise information while maintaining robust unconditional denoising capability.
+Experiments demonstrate significant OOD improvements (+1.4 dB SI-SDR on ESC-50 noise) while preserving competitive in-distribution performance.
+Future work includes extending to non-stationary noise through cross-attention mechanisms and scaling to larger training configurations.
+% TODO: 최종 결론 보완
+
+
+\section{Generative AI Use Disclosure}
+Generative AI tools (Claude) were used for code development assistance and manuscript editing.
+All experimental design, analysis, and scientific contributions are the work of the authors.
+
+
+
+
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{mybib}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:

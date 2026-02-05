@@ -299,3 +299,70 @@ Install: `pip install -r requirements.txt`
 ## Citation Info
 
 When using this code, cite the relevant papers (see README.md for BibTeX entries).
+
+---
+
+## Research Documents
+
+This project includes ongoing research on noise-conditioned speech enhancement. The following documents provide context for paper writing and experiments.
+
+### Document Reference
+
+| Document | Purpose | When to Read |
+|----------|---------|--------------|
+| `docs/PERFORMANCE_DEBUG.md` | **[CRITICAL]** 성능 문제 분석 및 디버깅 | 성능 이슈 해결 시 최우선 |
+| `docs/PAPER_WRITING_CONTEXT.md` | Paper writing guide and status | When working on paper (paper.tex) |
+| `docs/EXPERIMENT_REPORT.md` | Detailed experimental results and analysis | When reviewing/updating results |
+| `docs/NOISE_COND_IMPROVEMENTS.md` | Technical proposals and implementation details | When understanding methods |
+| `docs/paper.tex` | Main Interspeech 2026 paper | When editing paper content |
+
+### ⚠️ Current Issue: Performance Gap (2026-02-05)
+
+**문제 상황**:
+- Scaled training 결과가 기대에 미치지 못함
+- CFG 모델이 baseline보다 오히려 성능 저하
+- 논문 대비 baseline 성능도 낮음 (PESQ 2.9 vs 1.88)
+
+**Scaled Training 결과 (N=30)**:
+| Model | In-dist PESQ | OOD SI-SDR |
+|-------|--------------|------------|
+| SGMSE+ baseline | 1.88 | -0.2 |
+| CFG p=0.2 | 1.75 | -0.6 |
+
+**vs PoC 결과 (N=30)**:
+| Model | In-dist PESQ | OOD SI-SDR |
+|-------|--------------|------------|
+| SGMSE+ baseline | 1.92 | -0.6 |
+| CFG p=0.2 | 1.86 | **+0.8** |
+
+**조사 중인 원인**:
+1. Evaluation 설정 (N=30 vs N=50)
+2. Noise encoder/conditioning 효과 부재
+3. Scaled training에서의 CFG 동작 차이
+
+**다음 단계**: `docs/PERFORMANCE_DEBUG.md` 참조
+
+---
+
+### Current Research: Noise-Conditioned SGMSE+
+
+**Goal**: Improve OOD (Out-of-Distribution) noise generalization using CFG (Classifier-Free Guidance).
+
+**Key Files**:
+- Training: `train_noise_cond.py`
+- Enhancement: `enhancement_noise_cond.py`
+- Model: `sgmse/model_cond.py`
+- Backbone: `sgmse/backbones/ncsnpp_v2_cond.py`
+
+**Training Command**:
+```bash
+# PoC (1 GPU)
+python train_noise_cond.py --base_dir ./data/voicebank-demand --backbone ncsnpp_v2_cond --cond_drop_prob 0.2 --devices 1 --batch_size 4 --max_steps 50000
+
+# Scaled (4 GPU)
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train_noise_cond.py --base_dir ./data/voicebank-demand --backbone ncsnpp_v2_cond --cond_drop_prob 0.2 --devices 4 --batch_size 8 --max_steps 58000
+```
+
+**Checkpoints**:
+- SGMSE+ scaled: `./logs/55jxu1gw/last.ckpt`
+- CFG p=0.2 scaled: `./logs/50y8p2e4/last.ckpt`
