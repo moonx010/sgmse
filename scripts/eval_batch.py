@@ -19,15 +19,18 @@ from concurrent.futures import ProcessPoolExecutor
 # ============================================
 
 EXPERIMENTS = [
-    # (name, checkpoint_path, cfg_scale)
-    # True SGMSE+ baseline (no noise conditioning)
-    ("sgmse_baseline", "./logs/ppwxy81n-sgmse-baseline/step=50000.ckpt", 1.0),
-    # CFG p=0.05
-    ("cfg_p0.05", "./logs/rgzwzm57-nc-cfg-p0.05/step=50000.ckpt", 1.0),
-    # CFG p=0.15
-    ("cfg_p0.15", "./logs/5smxbgly-nc-cfg-p0.15/step=50000.ckpt", 1.0),
-    # CFG p=0.25
-    ("cfg_p0.25", "./logs/9ib5l06k-nc-cfg-p0.25/step=50000.ckpt", 1.0),
+    # (name, checkpoint_path, cfg_scale, is_noise_cond)
+    # ========== Scaled Training (Paper-level, 58k steps) ==========
+    # SGMSE+ baseline (paper config, no noise conditioning)
+    ("sgmse_scaled", "./logs/55jxu1gw/last.ckpt", 1.0, False),
+    # CFG p=0.2 scaled
+    ("cfg_p0.2_scaled", "./logs/50y8p2e4/last.ckpt", 1.0, True),
+
+    # ========== PoC (50k steps, batch=4) ==========
+    # SGMSE+ baseline (no noise conditioning)
+    # ("sgmse_baseline", "./logs/ppwxy81n-sgmse-baseline/step=50000.ckpt", 1.0, False),
+    # CFG p=0.2 (best PoC)
+    # ("cfg_p0.2", "./logs/kvue4el4-nc-cfg-p0.2/step=50000.ckpt", 1.0, True),
 ]
 
 DATASETS = [
@@ -45,24 +48,36 @@ RESULTS_DIR = "./evaluation_results"
 # ============================================
 
 
-def run_enhancement(gpu_id, exp_name, ckpt_path, cfg_scale, dataset_suffix, test_dir, clean_dir):
+def run_enhancement(gpu_id, exp_name, ckpt_path, cfg_scale, is_noise_cond, dataset_suffix, test_dir, clean_dir):
     """Run enhancement on a single GPU."""
     output_dir = f"{OUTPUT_BASE}_{exp_name}{dataset_suffix}"
 
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
-    cmd = [
-        "python", "enhancement_noise_cond.py",
-        "--test_dir", test_dir,
-        "--enhanced_dir", output_dir,
-        "--ckpt", ckpt_path,
-        "--oracle_noise",
-        "--clean_dir", clean_dir,
-        "--N", str(N_STEPS),
-        "--cfg_scale", str(cfg_scale),
-        "--device", "cuda"
-    ]
+    if is_noise_cond:
+        # Noise-conditioned model
+        cmd = [
+            "python", "enhancement_noise_cond.py",
+            "--test_dir", test_dir,
+            "--enhanced_dir", output_dir,
+            "--ckpt", ckpt_path,
+            "--oracle_noise",
+            "--clean_dir", clean_dir,
+            "--N", str(N_STEPS),
+            "--cfg_scale", str(cfg_scale),
+            "--device", "cuda"
+        ]
+    else:
+        # SGMSE+ baseline (no noise conditioning)
+        cmd = [
+            "python", "enhancement.py",
+            "--test_dir", os.path.join(test_dir, "noisy"),
+            "--enhanced_dir", output_dir,
+            "--ckpt", ckpt_path,
+            "--N", str(N_STEPS),
+            "--device", "cuda"
+        ]
 
     print(f"[GPU {gpu_id}] Starting: {exp_name}{dataset_suffix}")
     result = subprocess.run(cmd, env=env, capture_output=True, text=True)
@@ -193,12 +208,13 @@ def main():
 
     # Build task list
     tasks = []
-    for exp_name, ckpt_path, cfg_scale in EXPERIMENTS:
+    for exp_name, ckpt_path, cfg_scale, is_noise_cond in EXPERIMENTS:
         for dataset_suffix, test_dir, clean_dir, noisy_dir in DATASETS:
             tasks.append({
                 "exp_name": exp_name,
                 "ckpt_path": ckpt_path,
                 "cfg_scale": cfg_scale,
+                "is_noise_cond": is_noise_cond,
                 "dataset_suffix": dataset_suffix,
                 "test_dir": test_dir,
                 "clean_dir": clean_dir,
@@ -220,6 +236,7 @@ def main():
                     task["exp_name"],
                     task["ckpt_path"],
                     task["cfg_scale"],
+                    task["is_noise_cond"],
                     task["dataset_suffix"],
                     task["test_dir"],
                     task["clean_dir"]
