@@ -90,13 +90,15 @@ Recent advances in diffusion-based generative models have shown promising result
 SGMSE+~\cite{richter2023speech} learns to model the conditional distribution of clean speech given noisy observations through score-based generative modeling in the complex STFT domain, achieving state-of-the-art performance on benchmark datasets.
 However, most existing approaches are trained on limited noise types and often fail to generalize when encountering unseen noise environments at test time.
 
-% Para 3: 문제 정의 - OOD noise
-The challenge of out-of-distribution (OOD) generalization is particularly critical in real-world scenarios where the noise characteristics can vary significantly from training conditions.
-While some methods attempt to address this by training on diverse noise datasets, the space of possible noise types is practically infinite, making complete coverage infeasible.
+% Para 3: 기존 noise-aware 방법들과 한계
+Recent works have explored noise-aware approaches to improve generalization.
+NASE~\cite{hu2023nase} introduces a noise classification model to produce acoustic embeddings as a conditioner for diffusion-based SE, while NADiffuSE~\cite{wang2023nadiffuse} extracts noise representations as global conditional information.
+However, these methods rely on accurate noise characterization during inference---when the noise type is misclassified or the noise embedding is out-of-distribution, the conditioning can mislead the enhancement process rather than help it.
 
-% Para 4: 제안하는 방법 개요
-In this work, we propose a noise-conditioned speech enhancement framework that explicitly leverages noise characteristics through Classifier-Free Guidance (CFG)~\cite{ho2022classifier}.
-Our key insight is that by conditioning the diffusion model on noise reference signals while training with conditional dropout, the model learns to both utilize noise-specific information when available and fall back to robust unconditional denoising when the conditioning is unreliable.
+% Para 4: 제안하는 방법 개요 - CFG의 장점
+In this work, we propose a noise-conditioned speech enhancement framework that leverages Classifier-Free Guidance (CFG)~\cite{ho2022classifier} to address this limitation.
+Unlike prior noise-aware methods, CFG trains the model with conditional dropout, enabling it to perform both conditional and unconditional denoising.
+This allows the model to gracefully fall back to unconditional enhancement when the noise conditioning is unreliable, providing robustness against OOD noise types without sacrificing in-distribution performance.
 
 % Para 5: 주요 결과 요약 (TODO: 실험 결과 숫자 업데이트)
 Extensive experiments demonstrate that our approach achieves superior OOD generalization.

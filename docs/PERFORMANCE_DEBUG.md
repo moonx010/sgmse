@@ -87,7 +87,28 @@
 
 ---
 
-### 0.3 논문 Contribution 강화 방안
+### 0.3 Related Work 정리 (차별화 포인트)
+
+#### 직접 경쟁 논문들
+
+| Paper | Venue | Method | 한계점 | 우리와의 차이 |
+|-------|-------|--------|--------|--------------|
+| **NASE** | Interspeech 2023 | Noise classification → embedding | 잘못된 분류 시 성능 저하 | CFG로 unconditional fallback |
+| **NADiffuSE** | ASRU 2023 | Direct noise encoding | OOD 명시적 처리 없음 | CFG dropout으로 OOD robustness |
+| **N-HANS** | 2021 | Auxiliary sub-networks | Task-specific 학습 필요 | End-to-end joint training |
+
+#### 우리의 차별점 (Novelty)
+1. **CFG 기반 OOD Robustness**: 기존 방법들은 conditioning이 정확하다고 가정. 우리는 CFG로 unreliable conditioning에 대한 graceful degradation 제공
+2. **Classification 불필요**: NASE와 달리 discrete noise class 없이 continuous embedding 직접 사용
+3. **Inference-time 유연성**: Guidance scale w로 conditioning 강도 조절 가능
+
+#### References
+- NASE: https://arxiv.org/abs/2307.08029
+- NADiffuSE: https://arxiv.org/abs/2309.01212
+
+---
+
+### 0.4 논문 Contribution 강화 방안
 
 현재 contribution이 약함. 다음 중 1-2개 추가 필요:
 
