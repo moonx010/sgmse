@@ -39,7 +39,7 @@ DATASETS = [
     ("_ood", "./data/test_mixtures/vb_esc50/snr_0dB", "./data/test_mixtures/vb_esc50/snr_0dB/clean", "./data/test_mixtures/vb_esc50/snr_0dB/noisy"),
 ]
 
-N_STEPS = 30
+N_STEPS = 50
 OUTPUT_BASE = "./enhanced"
 RESULTS_DIR = "./evaluation_results"
 
