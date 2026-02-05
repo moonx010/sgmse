@@ -16,8 +16,14 @@ NASE와의 차이점은, NASE는 OOD noise에서 misleading conditioning 문제�
 
 그래서 contribution을 다시 정리해보면, 1) CFG를 통한 OOD graceful degradation, 2) inference time에 guidance scale 조절로 conditioning 강도 제어, 3) conditioning이 언제 도움되고 언제 해가 되는지 분석 정도로 잡으면 될 것 같아요.
 
-일정은 제출까지 D-18인데, 이번주에 NASE baseline이랑 저희 모델 학습하고, 다음주에 실험 돌리고, 마지막 주에 논문 작성하면 될 것 같습니다. 코드는 오늘 미리 준비해놨어요.
+지금은 NASE 스타일 아키텍처로 코드를 다시 짜고 있고, 논문 초안도 새 contribution에 맞게 수정해놨습니다. 실험 설계도 contribution을 증명할 수 있는 방향으로 다시 정리했어요.
 
 근데 멘토님이랑 논의하고 싶은게, NASE + CFG 조합이 충분한 novelty가 될 수 있을지, 그리고 만약 CFG가 OOD에서도 효과가 없으면 어떻게 해야할지가 좀 고민이에요.
 
 내일 미팅에서 같이 얘기해보면 좋을 것 같습니다!
+
+---
+참고한 논문들:
+- NASE (Interspeech 2023): https://arxiv.org/abs/2307.08029
+- NADiffuSE (ASRU 2023): https://arxiv.org/abs/2309.01212
+- DiTSE (2025): https://arxiv.org/abs/2504.09381
